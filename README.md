@@ -27,9 +27,15 @@
 에이전트(Claude Code 등)가 웹 UI 작업 시 어울리는 애니메이션을 알아서 추천하고 적용합니다:
 
 ```bash
-npx vibe-webeffect            # 현재 프로젝트 (./.claude/skills/)
-npx vibe-webeffect --global   # 전역 (~/.claude/skills/)
+npx vibe-webeffect            # 현재 프로젝트 — .agents/skills + .claude/skills 동시 설치
+npx vibe-webeffect --global   # 홈 디렉토리 (~/.agents/skills + ~/.claude/skills)
+npx vibe-webeffect --agents   # .agents/skills 만 (크로스 에이전트 표준)
+npx vibe-webeffect --claude   # .claude/skills 만 (Claude Code)
 ```
+
+`.agents/skills/`는 [Agent Skills 오픈 표준](https://agentskills.io)의 크로스 에이전트 관례로,
+**Codex · GitHub Copilot(VS Code) · Gemini CLI · Cursor · Goose · Amp · OpenCode** 등이 지원합니다.
+Claude Code는 `.claude/skills/`를 읽으므로 기본값은 두 곳 모두 설치합니다 — 어느 에이전트를 쓰든 동작.
 
 설치 후 에이전트에게 그냥 말하면 됩니다:
 
