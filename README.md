@@ -26,6 +26,16 @@
 
 에이전트(Claude Code 등)가 웹 UI 작업 시 어울리는 애니메이션을 알아서 추천하고 적용합니다:
 
+**방법 A — skills CLI (에이전트 선택 UI, skills.sh 생태계):**
+
+```bash
+npx skills add cdsassj00/vibe-webeffect
+```
+설치할 에이전트(Claude Code · Cursor · Codex · Copilot · Gemini CLI 등)를 체크박스로 선택하면
+각 에이전트의 스킬 폴더에 자동 설치됩니다.
+
+**방법 B — 전용 설치기 (프롬프트 없이 즉시):**
+
 ```bash
 npx vibe-webeffect            # 현재 프로젝트 — .agents/skills + .claude/skills 동시 설치
 npx vibe-webeffect --global   # 홈 디렉토리 (~/.agents/skills + ~/.claude/skills)
@@ -45,16 +55,16 @@ Claude Code는 `.claude/skills/`를 읽으므로 기본값은 두 곳 모두 설
 ### 스킬 동작 원리
 
 1. **컨텍스트 파악** — 히어로? 폼? 갤러리? 데이터 로딩?
-2. **카탈로그 매칭** — [`skill/catalog.json`](skill/catalog.json)의 72개 효과를 태그로 검색
+2. **카탈로그 매칭** — [`skills/vibe-webeffect/catalog.json`](skills/vibe-webeffect/catalog.json)의 72개 효과를 태그로 검색
 3. **추천** — 정확한 이름(KR+EN) + 이유 + 전제조건과 함께 2~4개 제시
-4. **적용** — [`skill/references/recipes.md`](skill/references/recipes.md)의 공용 패턴으로 코드 삽입
+4. **적용** — [`skills/vibe-webeffect/references/recipes.md`](skills/vibe-webeffect/references/recipes.md)의 공용 패턴으로 코드 삽입
    (한 화면 bold 1개 제한 · `prefers-reduced-motion` 필수 · 의존성 0)
 
 ## 📁 구조
 
 ```
 ├── index.html ~ 7개 카테고리 페이지   ← 사람이 보는 사전 (GitHub Pages)
-├── skill/
+├── skills/vibe-webeffect/            ← Agent Skills 표준 구조 (npx skills add 호환)
 │   ├── SKILL.md                      ← 에이전트 지침
 │   ├── catalog.json                  ← 72개 효과 기계용 카탈로그
 │   └── references/recipes.md         ← 공용 구현 패턴 9종

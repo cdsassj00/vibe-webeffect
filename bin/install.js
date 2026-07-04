@@ -17,7 +17,7 @@ const path = require("path");
 const os = require("os");
 
 const args = process.argv.slice(2);
-const SRC = path.join(__dirname, "..", "skill");
+const SRC = path.join(__dirname, "..", "skills", "vibe-webeffect");
 const root = (args.includes("--global") || args.includes("-g")) ? os.homedir() : process.cwd();
 
 let targets = [];
