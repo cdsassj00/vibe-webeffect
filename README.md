@@ -1,5 +1,7 @@
 # vibe-webeffect — 웹 애니메이션 사전
 
+[![npm](https://img.shields.io/npm/v/vibe-webeffect?color=ff5c49)](https://www.npmjs.com/package/vibe-webeffect) [![install](https://img.shields.io/badge/skills-npx%20skills%20add%20cdsassj00%2Fvibe--webeffect-54c7ff)](https://skills.sh) [![pages](https://img.shields.io/badge/demo-live-a78bfa)](https://cdsassj00.github.io/vibe-webeffect/)
+
 > **효과를 눈으로 보고, 정확한 이름을 알고, 그 이름 그대로 AI에게 지시한다.**
 > 코드를 직접 쓰지 않아도 된다 — **용어가 곧 능력**이다.
 
