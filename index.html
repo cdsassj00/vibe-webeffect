@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>웹 애니메이션 사전 · 브라우저의 재발견</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<!-- 웹 애니메이션 사전 — 허브. 4개 카테고리로 이동. 라이브러리 없이 동작. -->
+<style>
+  :root{--ink:#0a0c11;--panel:#141922;--panel2:#1b212c;--hair:#2a313d;--hair2:#39424f;
+    --text:#eef0f3;--muted:#8b93a0;--play:#ff5c49;--read:#ffc24b;--cool:#54c7ff;--v:#a78bfa;}
+  *{box-sizing:border-box}html,body{margin:0}
+  body{background:radial-gradient(120% 80% at 50% -10%,#10151f 0%,var(--ink) 60%) fixed,var(--ink);color:var(--text);
+    font-family:"Pretendard","Noto Sans KR",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;}
+  body::after{content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.038;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+  .sitenav{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:11px 24px;background:#0a0c11cc;backdrop-filter:blur(10px);border-bottom:1px solid var(--hair);font:600 13px/1 ui-monospace,monospace}
+  .sitenav__brand{color:var(--text);margin-right:14px;font-weight:800;letter-spacing:-.01em;text-decoration:none}.sitenav__brand b{color:var(--play)}
+  .sitenav a{color:var(--muted);text-decoration:none;padding:7px 12px;border-radius:8px;transition:.2s}
+  .sitenav a:hover{color:var(--text);background:#ffffff0a}.sitenav a.on{color:#0a0c11;background:var(--play)}
+
+  /* 히어로 */
+  .hero{max-width:1120px;margin:0 auto;padding:70px 24px 26px;text-align:center}
+  .hero .eyebrow{display:inline-flex;align-items:center;gap:9px;font:600 12px/1 ui-monospace,monospace;letter-spacing:.26em;text-transform:uppercase;color:var(--play);margin:0 0 20px}
+  .hero .eyebrow::before,.hero .eyebrow::after{content:"";width:26px;height:1px;background:var(--play)}
+  .hero h1{margin:0;font-size:clamp(34px,6.6vw,72px);font-weight:800;letter-spacing:-.035em;line-height:1.02}
+  .hero h1 em{font-style:normal;background:linear-gradient(90deg,var(--play),var(--read) 40%,var(--cool) 72%,var(--v));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{margin:22px auto 0;max-width:58ch;color:#c2c9d3;font-size:clamp(15px,1.7vw,17px)}
+  .hero .tag{margin:20px 0 0;font:700 13px/1 ui-monospace,monospace;color:var(--muted)}
+  .hero .tag b{color:var(--read)}
+  .hero .cta{margin:30px 0 0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .hero .cta a{font:700 13px/1 ui-monospace,monospace;text-decoration:none;padding:12px 18px;border-radius:10px;transition:.2s}
+  .hero .cta .p1{background:var(--play);color:#0a0c11}.hero .cta .p1:hover{filter:brightness(1.08)}
+  .hero .cta .p2{border:1px solid var(--hair2);color:var(--text)}.hero .cta .p2:hover{background:#ffffff0a}
+
+  /* 카테고리 그리드 */
+  .cats{max-width:1120px;margin:26px auto 30px;padding:0 24px;display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:760px){.cats{grid-template-columns:1fr}}
+  .cat{position:relative;display:flex;flex-direction:column;background:linear-gradient(180deg,#171d27,#12171f);border:1px solid var(--hair);border-radius:18px;overflow:hidden;text-decoration:none;color:inherit;transition:transform .3s cubic-bezier(.2,.7,.2,1),border-color .3s,box-shadow .3s;box-shadow:0 1px 0 #ffffff0a inset,0 16px 38px -22px #000c}
+  .cat:hover{transform:translateY(-6px);border-color:var(--hair2);box-shadow:0 1px 0 #ffffff12 inset,0 26px 50px -22px #000e}
+  .cat__stage{position:relative;height:172px;overflow:hidden;background:radial-gradient(130% 110% at 50% -10%,#1c2330 0%,#0f141c 76%);border-bottom:1px solid var(--hair)}
+  .cat__stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .cat__body{padding:18px 20px 20px}
+  .cat__row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .cat__no{font:800 12px/1 ui-monospace,monospace;color:var(--play);border:1px solid var(--play);border-radius:6px;padding:5px 7px}
+  .cat__eng{font:600 10px/1 ui-monospace,monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+  .cat__count{margin-left:auto;font:700 11px/1 ui-monospace,monospace;color:var(--read);border:1px solid #3a3016;background:#1a160c;border-radius:20px;padding:5px 11px}
+  .cat__name{margin:0;font-size:22px;font-weight:800;letter-spacing:-.02em}
+  .cat__desc{margin:9px 0 0;color:var(--muted);font-size:13.5px;line-height:1.55}
+  .cat__go{display:inline-flex;align-items:center;gap:6px;margin-top:14px;font:700 13px/1 ui-monospace,monospace;color:var(--cool);transition:gap .2s}
+  .cat:hover .cat__go{gap:12px}
+
+  /* 히어로 미리보기 요소 */
+  .pv-hover{width:118px;height:118px;border-radius:16px;background:linear-gradient(150deg,#222c3d,#161d29);border:1px solid var(--hair2);
+    display:grid;place-items:center;font:800 15px "Pretendard";color:var(--cool);animation:pvlift 2.6s ease-in-out infinite;box-shadow:0 18px 30px -16px #000c}
+  @keyframes pvlift{0%,100%{transform:translateY(10px) scale(.97);box-shadow:0 10px 20px -14px #000c;color:var(--muted)}
+    50%{transform:translateY(-14px) scale(1.03);box-shadow:0 30px 40px -18px #54c7ff55;color:var(--cool)}}
+  .pv-sig{position:absolute;inset:0;display:flex;align-items:center;overflow:hidden;
+    -webkit-mask:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent);mask:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent)}
+  .pv-sig__t{display:inline-flex;white-space:nowrap;animation:pvmarq 8s linear infinite;font:900 30px/1 ui-monospace,monospace}
+  .pv-sig__t span{padding:0 16px;color:var(--text)}.pv-sig__t span:nth-child(even){color:var(--play)}
+  @keyframes pvmarq{to{transform:translateX(-50%)}}
+
+  .strip{max-width:1120px;margin:0 auto;padding:0 24px}
+  .strip .rule{height:1px;background:linear-gradient(90deg,transparent,var(--hair) 30%,var(--hair) 70%,transparent)}
+
+  .foot{max-width:1120px;margin:34px auto 70px;padding:0 24px;color:var(--muted);font-size:13.5px;text-align:center}
+  .foot b{color:var(--text)}.foot code{background:var(--panel);border:1px solid var(--hair);border-radius:5px;padding:1px 6px;color:var(--text)}
+  .foot .big{font-size:16px;color:#d6dbe2;margin-bottom:10px}.foot .big em{font-style:normal;color:var(--read);font-weight:700}
+
+  /* 새 카테고리 미리보기 */
+  .pv-rev{width:120px;height:74px;border-radius:13px;background:linear-gradient(150deg,#233046,#182130);border:1px solid var(--hair2);
+    display:grid;place-items:center;font:800 14px "Pretendard";color:var(--v);animation:pvrev 2.6s cubic-bezier(.2,.7,.2,1) infinite}
+  @keyframes pvrev{0%,12%{opacity:0;transform:translateY(30px)}38%,78%{opacity:1;transform:none}96%,100%{opacity:0;transform:translateY(30px)}}
+  .pv-tgl{width:86px;height:46px;border-radius:30px;background:#2a313d;position:relative;animation:pvtglbg 2.4s ease-in-out infinite}
+  .pv-tgl i{position:absolute;top:5px;left:5px;width:36px;height:36px;border-radius:50%;background:#fff;box-shadow:0 3px 8px #0008;animation:pvtgl 2.4s cubic-bezier(.34,1.56,.64,1) infinite}
+  @keyframes pvtgl{0%,40%{transform:translateX(0)}55%,90%{transform:translateX(40px)}100%{transform:translateX(0)}}
+  @keyframes pvtglbg{0%,40%{background:#2a313d}55%,90%{background:var(--cool)}100%{background:#2a313d}}
+  .pv-skel{width:150px;padding:12px;border-radius:12px;background:#151b26;border:1px solid var(--hair)}
+  .pv-skel .r{display:flex;gap:9px;align-items:center;margin-bottom:9px}
+  .pv-skel .a{width:28px;height:28px;border-radius:50%}
+  .pv-skel .b{height:8px;border-radius:5px}
+  .pv-skel .sk{background:linear-gradient(90deg,#222b3a 25%,#31405a 42%,#222b3a 60%);background-size:220% 100%;animation:pvshim 1.4s linear infinite}
+  @keyframes pvshim{to{background-position:-220% 0}}
+  @media(prefers-reduced-motion:reduce){.pv-rev,.pv-tgl,.pv-tgl i,.pv-skel .sk{animation:none!important}}
+</style>
+</head>
+<body>
+
+<nav class="sitenav">
+  <a class="sitenav__brand" href="index.html" style="color:var(--text);padding:0">웹 애니메이션 <b>사전</b></a>
+  <a href="scroll-scrub-lab.html">스크롤</a>
+  <a href="hover-effects-lab.html">호버</a>
+  <a href="signature-effects-lab.html">시그니처</a>
+  <a href="reveal-effects-lab.html">등장·리빌</a>
+  <a href="micro-interactions-lab.html">마이크로</a>
+  <a href="loading-states-lab.html">로딩·상태</a>
+  <a href="insane-effects-lab.html">실험실</a>
+</nav>
+
+<header class="hero">
+  <p class="eyebrow">브라우저의 재발견</p>
+  <h1>웹 애니메이션을<br><em>눈으로 배우는 사전</em></h1>
+  <p>효과를 <b>직접 보고</b>, 정확한 <b>이름</b>을 알고, 그 이름 그대로 <b>AI에게 지시</b>한다. 코드를 직접 쓰지 않아도 된다 — 화려한 웹 효과가 실은 CSS 몇 줄, JS 몇 줄이라는 걸 카드마다 ‘?’로 열어 확인하라.</p>
+  <p class="tag">✦ <b>용어가 곧 능력</b> — 이름을 부르면, 만들어진다</p>
+  <div class="cta">
+    <a class="p1" href="scroll-scrub-lab.html">스크롤 스크러빙부터 →</a>
+    <a class="p2" href="insane-effects-lab.html">실험실 구경하기</a>
+  </div>
+</header>
+
+<div class="strip"><div class="rule"></div></div>
+
+<main class="cats">
+
+  <a class="cat" href="scroll-scrub-lab.html">
+    <div class="cat__stage"><canvas data-home="scrub"></canvas></div>
+    <div class="cat__body">
+      <div class="cat__row"><span class="cat__no">01</span><span class="cat__eng">scroll scrubbing</span><span class="cat__count">18 효과</span></div>
+      <h3 class="cat__name">스크롤 스크러빙</h3>
+      <p class="cat__desc">스크롤을 영상 편집 타임라인의 스크러버처럼 쓴다. 스크롤한 만큼 효과가 재생되는 요즘 사이트의 핵심 원리 + 결합 데모 12종.</p>
+      <span class="cat__go">열기 →</span>
+    </div>
+  </a>
+
+  <a class="cat" href="hover-effects-lab.html">
+    <div class="cat__stage"><div style="position:absolute;inset:0;display:grid;place-items:center"><div class="pv-hover">HOVER</div></div></div>
+    <div class="cat__body">
+      <div class="cat__row"><span class="cat__no">02</span><span class="cat__eng">hover effects</span><span class="cat__count">9 효과</span></div>
+      <h3 class="cat__name">마우스 호버</h3>
+      <p class="cat__desc">리프트·3D 틸트·글로우·샤인·마그네틱·스포트라이트. 커서에 반응하는 미세한 움직임이 만드는 ‘고급스러움’의 정체.</p>
+      <span class="cat__go">열기 →</span>
+    </div>
+  </a>
+
+  <a class="cat" href="signature-effects-lab.html">
+    <div class="cat__stage"><div class="pv-sig"><div class="pv-sig__t">
+      <span>SCRAMBLE</span><span>GLITCH</span><span>SPLIT</span><span>MARQUEE</span>
+      <span>SCRAMBLE</span><span>GLITCH</span><span>SPLIT</span><span>MARQUEE</span></div></div></div>
+    <div class="cat__body">
+      <div class="cat__row"><span class="cat__no">03</span><span class="cat__eng">signature effects</span><span class="cat__count">9 효과</span></div>
+      <h3 class="cat__name">시그니처 효과</h3>
+      <p class="cat__desc">어워즈 사이트가 쓰는 ‘와’ 소리 나는 효과. 텍스트 스크램블·글리치·커스텀 커서·스티키 스택·모프 블롭.</p>
+      <span class="cat__go">열기 →</span>
+    </div>
+  </a>
+
+  <a class="cat" href="reveal-effects-lab.html">
+    <div class="cat__stage"><div style="position:absolute;inset:0;display:grid;place-items:center"><div class="pv-rev">REVEAL</div></div></div>
+    <div class="cat__body">
+      <div class="cat__row"><span class="cat__no">04</span><span class="cat__eng">reveal on scroll</span><span class="cat__count">9 효과</span></div>
+      <h3 class="cat__name">등장·리빌</h3>
+      <p class="cat__desc">화면에 들어오는 순간 재생되는 등장 효과. 페이드 업·스태거·라인 마스크·카운트업 — IntersectionObserver 하나로 전부 구동.</p>
+      <span class="cat__go">열기 →</span>
+    </div>
+  </a>
+
+  <a class="cat" href="micro-interactions-lab.html">
+    <div class="cat__stage"><div style="position:absolute;inset:0;display:grid;place-items:center"><div class="pv-tgl"><i></i></div></div></div>
+    <div class="cat__body">
+      <div class="cat__row"><span class="cat__no">05</span><span class="cat__eng">micro-interactions</span><span class="cat__count">9 효과</span></div>
+      <h3 class="cat__name">마이크로 인터랙션</h3>
+      <p class="cat__desc">토글·좋아요 버스트·리플·별점·체크 드로우·벨 알림. 앱이 ‘살아있다’고 느끼게 하는 0.5초의 디테일.</p>
+      <span class="cat__go">열기 →</span>
+    </div>
+  </a>
+
+  <a class="cat" href="loading-states-lab.html">
+    <div class="cat__stage"><div style="position:absolute;inset:0;display:grid;place-items:center"><div class="pv-skel"><div class="r"><div class="a sk"></div><div style="flex:1"><div class="b sk" style="width:75%"></div><div class="b sk" style="width:48%;margin-top:6px"></div></div></div><div class="b sk" style="width:100%"></div><div class="b sk" style="width:82%;margin-top:6px"></div></div></div></div>
+    <div class="cat__body">
+      <div class="cat__row"><span class="cat__no">06</span><span class="cat__eng">loading · states</span><span class="cat__count">9 효과</span></div>
+      <h3 class="cat__name">로딩·상태</h3>
+      <p class="cat__desc">스피너·스켈레톤 시머·프로그레스·성공 체크·에러 셰이크·버튼 몰프. UI의 신뢰감을 만드는 상태 피드백.</p>
+      <span class="cat__go">열기 →</span>
+    </div>
+  </a>
+
+  <a class="cat" href="insane-effects-lab.html">
+    <div class="cat__stage"><canvas data-home="net"></canvas></div>
+    <div class="cat__body">
+      <div class="cat__row"><span class="cat__no">07</span><span class="cat__eng">experimental</span><span class="cat__count">9 효과</span></div>
+      <h3 class="cat__name">실험실 <span style="color:var(--play);font-size:13px">· 브라우저가 이런 것도?</span></h3>
+      <p class="cat__desc">라이브러리 0개. 순수 canvas·SVG·CSS로 구이 메탈볼, 파티클 성좌, 매트릭스 레인, 리퀴드 텍스트, ASCII 3D 도넛, 무한 터널까지.</p>
+      <span class="cat__go">열기 →</span>
+    </div>
+  </a>
+
+</main>
+
+<footer class="foot">
+  <p class="big">여러분 컴퓨터엔 이미 강력한 실행 환경이 깔려 있다 — <em>브라우저</em>.</p>
+  <p>모든 페이지는 <b>HTML 파일 하나</b>로 동작한다. 설치도, 서버도, 라이브러리도 없이 <code>GitHub Pages</code>에 그대로 올라간다. 각 효과 카드의 <b>‘?’</b>를 누르면 준비물 · AI 지시문 · 핵심 코드가 나온다.</p>
+</footer>
+
+<script>
+"use strict";
+const REDUCE=matchMedia("(prefers-reduced-motion:reduce)").matches;
+function fit(cv){const dpr=Math.min(2,devicePixelRatio||1),r=cv.getBoundingClientRect();
+  cv.width=Math.max(1,Math.round(r.width*dpr));cv.height=Math.max(1,Math.round(r.height*dpr));
+  const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);return {ctx,w:r.width,h:r.height};}
+
+/* 미리보기 01 — 스크러빙 타임라인 (파형 + 플레이헤드) */
+(function(){const cv=document.querySelector('[data-home="scrub"]');if(!cv)return;let ctx,w,h,hs=[];
+  function size(){const o=fit(cv);ctx=o.ctx;w=o.w;h=o.h;const n=Math.max(8,Math.floor(w/7));
+    hs=Array.from({length:n},(_,i)=>0.28+0.6*Math.abs(Math.sin(i*0.5)+0.5*Math.sin(i*0.17)));}
+  size();addEventListener("resize",size);let T=0;
+  (function loop(){T+=0.01;ctx.clearRect(0,0,w,h);const p=0.5+0.46*Math.sin(T);const bw=w/hs.length;
+    for(let i=0;i<hs.length;i++){const x=i*bw,bh=hs[i]*h*0.62,near=Math.abs((i/hs.length)-p)<0.06;
+      ctx.fillStyle=near?"#ff5c49":"#2f3a49";ctx.fillRect(x+bw*0.2,h/2-bh/2,bw*0.6,bh);}
+    const px=p*w;ctx.strokeStyle="#ffc24b";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(px,10);ctx.lineTo(px,h-10);ctx.stroke();
+    ctx.fillStyle="#ffc24b";ctx.beginPath();ctx.arc(px,12,4,0,6.29);ctx.fill();
+    if(!REDUCE)requestAnimationFrame(loop);})();})();
+
+/* 미리보기 04 — 파티클 성좌 */
+(function(){const cv=document.querySelector('[data-home="net"]');if(!cv)return;let ctx,w,h;const N=40,P=[];
+  function size(){const o=fit(cv);ctx=o.ctx;w=o.w;h=o.h;}size();addEventListener("resize",size);
+  for(let i=0;i<N;i++)P.push({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-.5)*.5,vy:(Math.random()-.5)*.5});
+  let T=0;
+  (function loop(){T+=0.01;ctx.clearRect(0,0,w,h);const ax=w*(0.5+0.4*Math.cos(T)),ay=h*(0.5+0.4*Math.sin(T*1.3));
+    for(const p of P){const dx=ax-p.x,dy=ay-p.y,d=Math.hypot(dx,dy)||1;if(d<90){p.vx+=dx/d*0.02;p.vy+=dy/d*0.02;}
+      p.vx*=0.99;p.vy*=0.99;p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0||p.x>w)p.vx*=-1;if(p.y<0||p.y>h)p.vy*=-1;p.x=Math.max(0,Math.min(w,p.x));p.y=Math.max(0,Math.min(h,p.y));}
+    for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){const a=P[i],b=P[j],d=Math.hypot(a.x-b.x,a.y-b.y);
+      if(d<58){ctx.strokeStyle="rgba(167,139,250,"+(1-d/58)*0.55+")";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}}
+    for(const p of P){ctx.fillStyle="#d7ccff";ctx.beginPath();ctx.arc(p.x,p.y,1.7,0,6.29);ctx.fill();}
+    if(!REDUCE)requestAnimationFrame(loop);})();})();
+</script>
+</body>
+</html>

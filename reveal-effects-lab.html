@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>등장·리빌 · 브라우저의 재발견</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<!-- 웹 애니메이션 사전 : 등장·리빌 편. 데모는 자동 반복, 실제 구현은 IntersectionObserver. -->
+<style>
+  :root{--ink:#0a0c11;--panel:#141922;--panel2:#1b212c;--hair:#2a313d;--hair2:#39424f;
+    --text:#eef0f3;--muted:#8b93a0;--play:#ff5c49;--read:#ffc24b;--cool:#54c7ff;--v:#a78bfa;}
+  *{box-sizing:border-box}html,body{margin:0}
+  body{background:radial-gradient(120% 80% at 50% -10%,#10151f 0%,var(--ink) 60%) fixed,var(--ink);color:var(--text);
+    font-family:"Pretendard","Noto Sans KR",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;}
+  body::after{content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.038;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+  .sitenav{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:11px 24px;background:#0a0c11cc;backdrop-filter:blur(10px);border-bottom:1px solid var(--hair);font:600 13px/1 ui-monospace,monospace}
+  .sitenav__brand{color:var(--text);margin-right:14px;font-weight:800;letter-spacing:-.01em;text-decoration:none;padding:0}.sitenav__brand b{color:var(--play)}
+  .sitenav a{color:var(--muted);text-decoration:none;padding:7px 12px;border-radius:8px;transition:.2s}
+  .sitenav a:hover{color:var(--text);background:#ffffff0a}.sitenav a.on{color:#0a0c11;background:var(--play)}
+
+  .top{max-width:1220px;margin:0 auto;padding:42px 24px 4px}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;font:600 12px/1 ui-monospace,monospace;letter-spacing:.24em;text-transform:uppercase;color:var(--play);margin:0 0 16px}
+  .eyebrow::before{content:"";width:22px;height:1px;background:var(--play)}
+  .top h1{margin:0;font-size:clamp(27px,4.4vw,46px);font-weight:800;letter-spacing:-.025em;line-height:1.08}
+  .top h1 em{font-style:normal;background:linear-gradient(90deg,var(--v),var(--cool));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lede{margin:16px 0 0;max-width:62ch;color:var(--muted);font-size:15px}.lede b{color:var(--text);font-weight:600}
+  .note{margin:14px 0 0;font:600 12px/1.4 ui-monospace,monospace;color:var(--muted)}.note span{color:var(--cool)}
+  .rule{max-width:1220px;margin:20px auto 0;padding:0 24px}.rule i{display:block;height:1px;background:linear-gradient(90deg,var(--hair) 0%,transparent 60%)}
+
+  .grid{max-width:1220px;margin:22px auto 44px;padding:0 24px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:580px){.grid{grid-template-columns:1fr}}
+
+  .fx{background:linear-gradient(180deg,#171d27,#131822);border:1px solid var(--hair);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;height:292px;position:relative;box-shadow:0 1px 0 #ffffff0a inset,0 14px 34px -18px #000c}
+  .fx__bar{display:flex;align-items:center;gap:11px;padding:13px 15px;border-bottom:1px solid var(--hair);background:linear-gradient(180deg,var(--panel2),#171c25)}
+  .fx__no{font:800 12px/1 ui-monospace,monospace;color:var(--play);border:1px solid var(--play);border-radius:6px;padding:5px 7px;box-shadow:0 0 12px #ff5c4933}
+  .fx__name{font-size:14px;font-weight:700;letter-spacing:-.01em}
+  .fx__eng{margin-left:auto;font:600 10px/1 ui-monospace,monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;border:1px solid var(--hair);border-radius:20px;padding:5px 10px;white-space:nowrap}
+  .fx__info{margin-left:8px;width:26px;height:26px;flex:none;border-radius:50%;border:1px solid var(--hair2);background:transparent;color:var(--muted);font:800 13px/1 ui-monospace,monospace;cursor:pointer;display:grid;place-items:center;transition:.2s}
+  .fx__info:hover{border-color:var(--play);color:var(--play);box-shadow:0 0 12px #ff5c4933}
+  .fx__demo{flex:1;display:grid;place-items:center;overflow:hidden;position:relative;background:radial-gradient(130% 100% at 50% -12%,#1c2330 0%,#10151d 74%)}
+  .fx__code{position:absolute;left:13px;bottom:13px;z-index:5;pointer-events:none;font:600 11px/1 ui-monospace,monospace;color:#d3d8df;background:#0a0d12cc;border:1px solid var(--hair);border-radius:7px;padding:6px 9px;max-width:calc(100% - 26px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;backdrop-filter:blur(4px)}
+  .fx__code b{color:var(--cool);font-weight:700}
+
+  .info{position:absolute;inset:0;z-index:8;overflow:auto;padding:15px 16px 18px;background:linear-gradient(180deg,#0f141cf5,#0c1017fb);backdrop-filter:blur(6px);opacity:0;visibility:hidden;transform:translateY(8px);pointer-events:none;transition:.28s cubic-bezier(.2,.7,.2,1)}
+  .fx.open .info{opacity:1;visibility:visible;transform:none;pointer-events:auto}
+  .info__hd{display:flex;align-items:center;gap:8px;margin:0 0 12px}.info__hd h4{margin:0;font-size:15px;font-weight:800;letter-spacing:-.01em}
+  .info__x{margin-left:auto;width:26px;height:26px;flex:none;border-radius:8px;border:1px solid var(--hair2);background:transparent;color:var(--muted);cursor:pointer;font-size:13px;display:grid;place-items:center}
+  .info__x:hover{color:var(--play);border-color:var(--play)}
+  .lbl{font:700 10px/1 ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--play);display:block;margin:14px 0 6px}.lbl:first-of-type{margin-top:0}
+  .info p{margin:0;font-size:12.5px;color:#c8cdd5;line-height:1.55}
+  .info .cmd{margin:6px 0 0;font:600 11.5px/1.5 ui-monospace,monospace;color:#bfe6ff;background:#0a1520;border:1px solid #223243;border-radius:8px;padding:9px 10px;white-space:pre-wrap;word-break:break-word}
+  .info .ask{margin:6px 0 0;font-size:12.5px;color:#e7d6a8;background:#1a160c;border:1px solid #3a3016;border-left:3px solid var(--read);border-radius:8px;padding:9px 11px;line-height:1.55}
+
+  .foot{max-width:1220px;margin:0 auto 66px;padding:0 24px;color:var(--muted);font-size:13px;max-width:84ch}
+  .foot code{background:var(--panel);border:1px solid var(--hair);border-radius:5px;padding:1px 6px;color:var(--text)}.foot .k{color:var(--play);font-weight:700}
+
+  /* ==== 데모 ==== */
+  .E{transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1),filter .7s cubic-bezier(.2,.7,.2,1)}
+  /* 01 페이드 업 */
+  .fadeup{width:150px;height:96px;border-radius:14px;background:linear-gradient(150deg,#233046,#182130);border:1px solid var(--hair2);
+    display:grid;place-items:center;font:800 16px "Pretendard";color:var(--cool);opacity:0;transform:translateY(34px)}
+  .go .fadeup{opacity:1;transform:none}
+  /* 02 스태거 그리드 */
+  .stg{display:grid;grid-template-columns:repeat(3,54px);gap:10px}
+  .stg i{height:54px;border-radius:11px;background:linear-gradient(150deg,#54c7ff,#4b7de0);opacity:0;transform:translateY(22px) scale(.8)}
+  .stg i:nth-child(2){background:linear-gradient(150deg,#a78bfa,#7d5fd8)}.stg i:nth-child(3){background:linear-gradient(150deg,#ff5c49,#c2543f)}
+  .stg i:nth-child(4){background:linear-gradient(150deg,#ffc24b,#e09a2c)}.stg i:nth-child(5){background:linear-gradient(150deg,#5ce1a0,#35b578)}
+  .stg i:nth-child(6){background:linear-gradient(150deg,#54c7ff,#a78bfa)}
+  .go .stg i{opacity:1;transform:none}
+  /* 03 클립 와이프 */
+  .wipe{width:170px;height:100px;border-radius:14px;display:grid;place-items:center;font:800 17px "Pretendard";color:#0a0c11;
+    background:linear-gradient(135deg,#ffc24b,#ff5c49);clip-path:inset(0 100% 0 0);transition:clip-path .8s cubic-bezier(.2,.7,.2,1)}
+  .go .wipe{clip-path:inset(0 0 0 0)}
+  /* 04 라인 마스크 */
+  .lines{font:800 21px/1.4 "Pretendard";letter-spacing:-.01em}
+  .lines .ln{display:block;overflow:hidden}
+  .lines .ln span{display:block;transform:translateY(115%);transition:transform .75s cubic-bezier(.2,.7,.2,1)}
+  .lines .ln:nth-child(2) span{transition-delay:.12s;color:var(--cool)}.lines .ln:nth-child(3) span{transition-delay:.24s;color:var(--v)}
+  .go .lines .ln span{transform:none}
+  /* 05 스케일+블러 */
+  .zb{font:900 40px ui-monospace,monospace;color:var(--read);opacity:0;transform:scale(.6);filter:blur(10px)}
+  .go .zb{opacity:1;transform:none;filter:blur(0)}
+  /* 06 좌우 교차 */
+  .lr{display:flex;flex-direction:column;gap:12px}
+  .lr i{width:168px;height:44px;border-radius:11px;display:flex;align-items:center;padding:0 14px;font:700 13px "Pretendard";color:#0a0c11;opacity:0}
+  .lr i:nth-child(1){background:#54c7ff;transform:translateX(-56px)}
+  .lr i:nth-child(2){background:#a78bfa;transform:translateX(56px);transition-delay:.1s}
+  .lr i:nth-child(3){background:#ffc24b;transform:translateX(-56px);transition-delay:.2s}
+  .go .lr i{opacity:1;transform:none}
+  /* 07 카운트업 */
+  .cnt{font:900 52px ui-monospace,monospace;color:var(--text)}.cnt small{display:block;text-align:center;font:700 11px ui-monospace,monospace;color:var(--muted);letter-spacing:.14em;margin-top:6px}
+  /* 08 이미지 커튼 */
+  .cur{position:relative;width:176px;height:104px;border-radius:14px;overflow:hidden}
+  .cur .img{position:absolute;inset:0;background:linear-gradient(135deg,#26406e,#6a3b7a);display:grid;place-items:center;font:800 17px "Pretendard";color:#fff;transform:scale(1.25);transition:transform .9s cubic-bezier(.2,.7,.2,1)}
+  .cur .ov{position:absolute;inset:0;background:var(--read);transform:scaleX(1);transform-origin:right;transition:transform .8s cubic-bezier(.7,0,.2,1)}
+  .go .cur .img{transform:scale(1)}.go .cur .ov{transform:scaleX(0)}
+  /* 09 라인 드로잉 */
+  .tl{display:flex;align-items:center;gap:0}
+  .tl .dot{width:13px;height:13px;border-radius:50%;background:var(--play);box-shadow:0 0 14px #ff5c4988;opacity:0;transition:opacity .3s}
+  .tl .seg{height:2px;width:0;background:linear-gradient(90deg,var(--play),var(--v));transition:width .9s cubic-bezier(.2,.7,.2,1)}
+  .tl .dot:nth-child(3){transition-delay:.85s}.go .tl .dot{opacity:1}.go .tl .seg{width:130px}
+
+  .noanim, .noanim *{transition:none!important}
+
+  @media(prefers-reduced-motion:reduce){.E,.wipe,.lines .ln span,.lr i,.cur .img,.cur .ov,.tl .seg{transition:none!important}}
+</style>
+</head>
+<body>
+
+<nav class="sitenav">
+  <a class="sitenav__brand" href="index.html">웹 애니메이션 <b>사전</b></a>
+  <a href="scroll-scrub-lab.html">스크롤</a>
+  <a href="hover-effects-lab.html">호버</a>
+  <a href="signature-effects-lab.html">시그니처</a>
+  <a href="reveal-effects-lab.html" class="on">등장·리빌</a>
+  <a href="micro-interactions-lab.html">마이크로</a>
+  <a href="loading-states-lab.html">로딩·상태</a>
+  <a href="insane-effects-lab.html">실험실</a>
+</nav>
+
+<header class="top">
+  <p class="eyebrow">브라우저의 재발견 · 등장·리빌</p>
+  <h1>화면에 들어올 때 <em>비로소 나타난다</em></h1>
+  <p class="lede">스크롤해서 요소가 화면에 진입하는 순간 재생되는 등장 효과 9가지. 실전에서는 <b>IntersectionObserver</b>(요소가 화면에 보이는지 감시하는 브라우저 내장 기능) 하나로 전부 구동한다. 카드의 <b>‘?’</b>에 준비물·AI 지시문·핵심 코드.</p>
+  <p class="note"><span>↻</span> 데모는 자동 반복 재생 — 실제로는 화면 진입 시 1회 재생된다.</p>
+</header>
+<div class="rule"><i></i></div>
+
+<main class="grid">
+
+  <section class="fx" data-loop="2600">
+    <div class="fx__bar"><span class="fx__no">01</span><span class="fx__name">페이드 업</span><span class="fx__eng">fade up</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><div class="E fadeup">CONTENT</div><div class="fx__code"><b>opacity 0→1</b> + translateY 34→0</div></div>
+    <div class="info"><div class="info__hd"><h4>페이드 업 (기본 중의 기본)</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>숨김 상태(투명+아래로 이동)를 CSS로 정의하고, 화면 진입 시 <b>클래스 하나</b>를 붙인다. 모든 등장 효과의 뼈대.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“섹션이 화면에 들어오면 아래에서 위로 떠오르며 나타나게 해줘. IntersectionObserver로.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">new IntersectionObserver(es=>es.forEach(e=>{
+  if(e.isIntersecting) e.target.classList.add("show");
+}),{threshold:0.2}).observe(el);</div></div>
+  </section>
+
+  <section class="fx" data-loop="2800">
+    <div class="fx__bar"><span class="fx__no">02</span><span class="fx__name">스태거 그리드</span><span class="fx__eng">stagger children</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><div class="stg"><i class="E"></i><i class="E"></i><i class="E"></i><i class="E"></i><i class="E"></i><i class="E"></i></div>
+      <div class="fx__code"><b>transition-delay</b> = i × 80ms</div></div>
+    <div class="info"><div class="info__hd"><h4>스태거 그리드 (자식 순차 등장)</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>카드 목록·갤러리에서 자식들이 <b>도미노처럼 순서대로</b> 등장. 각 자식에 <code>transition-delay: i×80ms</code>만 주면 끝.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“카드 그리드가 화면에 들어오면 카드들이 순서대로 하나씩 나타나게(스태거) 해줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">items.forEach((el,i)=>
+  el.style.transitionDelay = i*80+"ms");</div></div>
+  </section>
+
+  <section class="fx" data-loop="2700">
+    <div class="fx__bar"><span class="fx__no">03</span><span class="fx__name">클립 와이프</span><span class="fx__eng">clip reveal</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><div class="wipe">REVEAL</div><div class="fx__code"><b>clip-path</b> inset(0 100% 0 0) → 0</div></div>
+    <div class="info"><div class="info__hd"><h4>클립 와이프 리빌</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>요소를 <b>clip-path</b>로 완전히 잘라뒀다가 진입 시 잘린 영역을 0으로. 이미지·배너가 닦이듯 드러난다. 방향은 inset의 변만 바꾸면 된다.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“이미지가 화면에 들어오면 왼쪽부터 닦이듯이 드러나는 클립 리빌 넣어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">el{clip-path:inset(0 100% 0 0);transition:clip-path .8s}
+el.show{clip-path:inset(0 0 0 0)}</div></div>
+  </section>
+
+  <section class="fx" data-loop="3000">
+    <div class="fx__bar"><span class="fx__no">04</span><span class="fx__name">라인 마스크 리빌</span><span class="fx__eng">line mask</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><div class="lines">
+      <span class="ln"><span>텍스트가 줄 단위로</span></span>
+      <span class="ln"><span>아래에서 밀고</span></span>
+      <span class="ln"><span>올라온다</span></span></div>
+      <div class="fx__code"><b>overflow:hidden</b> + translateY(115%)</div></div>
+    <div class="info"><div class="info__hd"><h4>라인 마스크 리빌 (고급 타이포)</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>각 줄을 <b>overflow:hidden 상자</b>로 감싸고 안쪽 텍스트를 아래(115%)에 숨겨뒀다 줄마다 시차를 두고 올린다. 어워즈 사이트 헤드라인의 표준.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“헤드라인이 줄 단위로 마스크 아래에서 밀고 올라오는 라인 리빌 효과 만들어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">.ln{overflow:hidden}
+.ln span{transform:translateY(115%)}
+.show .ln span{transform:none} /* +줄별 delay */</div></div>
+  </section>
+
+  <section class="fx" data-loop="2600">
+    <div class="fx__bar"><span class="fx__no">05</span><span class="fx__name">스케일 + 블러 인</span><span class="fx__eng">scale · blur in</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><div class="E zb">FOCUS</div><div class="fx__code"><b>scale(.6)</b> + blur(10px) → 원상</div></div>
+    <div class="info"><div class="info__hd"><h4>스케일 + 블러 인</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>작고 흐릿한 상태에서 <b>커지며 또렷해지는</b> 등장. 숫자·키워드 강조에 잘 어울린다. filter는 GPU 부담이 있으니 큰 영역엔 남용 금지.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“키워드가 흐릿하고 작게 시작해서 커지며 선명해지는 등장 효과 넣어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">el{opacity:0;transform:scale(.6);filter:blur(10px)}
+el.show{opacity:1;transform:none;filter:blur(0)}</div></div>
+  </section>
+
+  <section class="fx" data-loop="3000">
+    <div class="fx__bar"><span class="fx__no">06</span><span class="fx__name">좌우 교차 슬라이드</span><span class="fx__eng">alternate slide</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><div class="lr"><i class="E">왼쪽에서</i><i class="E">오른쪽에서</i><i class="E">다시 왼쪽에서</i></div>
+      <div class="fx__code"><b>translateX(±56px)</b> 홀짝 교차</div></div>
+    <div class="info"><div class="info__hd"><h4>좌우 교차 슬라이드</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>목록의 홀수는 왼쪽, 짝수는 오른쪽에서 미끄러져 들어온다. <b>:nth-child(odd/even)</b>로 방향만 갈라주면 끝. 타임라인·피처 목록에.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“항목들이 홀수는 왼쪽, 짝수는 오른쪽에서 교차로 슬라이드되며 나타나게 해줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">li:nth-child(odd){transform:translateX(-56px)}
+li:nth-child(even){transform:translateX(56px)}
+.show li{transform:none;opacity:1}</div></div>
+  </section>
+
+  <section class="fx" data-loop="3200">
+    <div class="fx__bar"><span class="fx__no">07</span><span class="fx__name">카운트업 온뷰</span><span class="fx__eng">count-up</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><div class="cnt"><span data-count>0</span><small>ACTIVE USERS</small></div>
+      <div class="fx__code"><b>ease-out</b> 보간으로 0 → 목표값</div></div>
+    <div class="info"><div class="info__hd"><h4>카운트업 (보일 때 세기)</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>통계 숫자가 화면에 <b>보이는 순간</b> 0부터 목표값까지 가속-감속으로 센다. 진입 전에 세면 아무도 못 보니 IntersectionObserver가 필수인 대표 사례.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“통계 숫자가 화면에 보이면 0부터 목표값까지 차오르는 카운트업 애니메이션 넣어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">const t=Math.min(1,(now-t0)/1200);
+el.textContent=Math.round(target*(1-Math.pow(1-t,3)))
+  .toLocaleString();</div></div>
+  </section>
+
+  <section class="fx" data-loop="3000">
+    <div class="fx__bar"><span class="fx__no">08</span><span class="fx__name">커튼 이미지 리빌</span><span class="fx__eng">curtain + zoom</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><div class="cur"><div class="img">IMAGE</div><div class="ov"></div></div>
+      <div class="fx__code"><b>overlay scaleX 1→0</b> + img 1.25→1</div></div>
+    <div class="info"><div class="info__hd"><h4>커튼 이미지 리빌</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>이미지 위 <b>색 커튼</b>이 옆으로 걷히는 동시에 이미지가 살짝 줌아웃(1.25→1). 두 모션의 합이 에디토리얼한 고급감을 만든다.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“이미지 위 색 오버레이가 옆으로 걷히면서 이미지가 살짝 줌아웃되는 커튼 리빌 만들어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">.ov{transform-origin:right}
+.show .ov{transform:scaleX(0)}
+.show img{transform:scale(1)} /* 1.25에서 */</div></div>
+  </section>
+
+  <section class="fx" data-loop="3200">
+    <div class="fx__bar"><span class="fx__no">09</span><span class="fx__name">타임라인 드로잉</span><span class="fx__eng">line draw</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><div class="tl"><span class="dot"></span><span class="seg"></span><span class="dot"></span></div>
+      <div class="fx__code"><b>width 0 → 130px</b> (선이 자란다)</div></div>
+    <div class="info"><div class="info__hd"><h4>타임라인 라인 드로잉</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>점이 찍히고 <b>선이 자라</b> 다음 점에 닿는다. 연혁·프로세스 다이어그램에서 진입할 때마다 구간이 이어지는 연출. SVG면 stroke-dashoffset으로도 동일.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“타임라인이 화면에 들어오면 점이 찍히고 선이 자라나며 이어지게 해줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">.seg{width:0;transition:width .9s}
+.show .seg{width:130px}
+/* SVG: stroke-dashoffset L→0 */</div></div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <p><span class="k">9가지 등장 효과 —</span> 전부 같은 골격이다: CSS로 <code>숨김 상태 → 표시 상태</code>를 정의하고, <code>IntersectionObserver</code>가 화면 진입 순간 클래스를 붙인다. 관찰 1회 후 <code>unobserve()</code>하면 다시 안 나온다(1회성), 안 하면 스크롤마다 재생된다.</p>
+</footer>
+
+<script>
+"use strict";
+const REDUCE=matchMedia("(prefers-reduced-motion:reduce)").matches;
+document.querySelectorAll(".fx").forEach((p,i)=>{
+  if(!REDUCE)p.animate([{opacity:0,transform:"translateY(18px)"},{opacity:1,transform:"none"}],{duration:640,delay:i*60,easing:"cubic-bezier(.2,.7,.2,1)",fill:"backwards"});
+  const b=p.querySelector(".fx__info"),x=p.querySelector(".info__x");
+  if(b)b.addEventListener("click",()=>p.classList.toggle("open"));
+  if(x)x.addEventListener("click",()=>p.classList.remove("open"));
+});
+
+/* 자동 반복: 스냅 리셋 → 재생 (transition 기반이라 리셋 순간만 transition을 끈다) */
+document.querySelectorAll("[data-loop]").forEach(p=>{
+  const demo=p.querySelector(".fx__demo"),T=+p.dataset.loop;
+  const go=()=>{
+    demo.classList.add("noanim");   // 1) transition 끄고
+    demo.classList.remove("go");    // 2) 숨김 상태로 즉시 스냅
+    void demo.offsetWidth;
+    demo.classList.remove("noanim");// 3) transition 다시 켜고
+    void demo.offsetWidth;
+    demo.classList.add("go");       // 4) 숨김 → 표시 재생
+  };
+  requestAnimationFrame(()=>demo.classList.add("go")); // 첫 등장
+  if(!REDUCE)setInterval(go,T);
+  demo.addEventListener("mouseenter",go);
+});
+
+/* 07 카운트업 */
+(function(){const el=document.querySelector("[data-count]");if(!el)return;const target=12480;
+  function run(){const t0=performance.now();
+    (function tick(now){const t=Math.min(1,(now-t0)/1400);
+      el.textContent=Math.round(target*(1-Math.pow(1-t,3))).toLocaleString();
+      if(t<1)requestAnimationFrame(tick);})(t0);}
+  run();if(!REDUCE)setInterval(run,3200);})();
+</script>
+</body>
+</html>

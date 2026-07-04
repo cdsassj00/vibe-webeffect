@@ -1,0 +1,11 @@
+{
+  "name": "vibe-webeffect",
+  "version": "0.1.0",
+  "description": "웹 UI 작업 맥락을 읽고 어울리는 웹 애니메이션을 추천·적용하는 AI 에이전트 스킬. 72개 효과 카탈로그 (스크롤 스크러빙/호버/시그니처/등장·리빌/마이크로/로딩·상태/실험실). npx로 설치하는 agent-common skill.",
+  "keywords": ["claude", "skill", "agent", "web-animation", "css", "ui", "vibe-coding", "웹애니메이션"],
+  "bin": { "vibe-webeffect": "bin/install.js" },
+  "files": ["bin", "skill", "README.md"],
+  "author": "cdsassj00",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/cdsassj00/vibe-webeffect" }
+}

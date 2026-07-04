@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>마우스 호버 효과 사전 · 브라우저의 재발견</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<!--
+  브라우저의 재발견 — 웹 애니메이션 사전 : 마우스 호버 편
+  각 데모는 자동으로 반복 재생된다(움직임을 크게). 마우스를 올리면 직접 조작도 가능.
+-->
+<style>
+  :root{--ink:#0a0c11;--panel:#141922;--panel2:#1b212c;--hair:#2a313d;--hair2:#39424f;
+    --text:#eef0f3;--muted:#8b93a0;--play:#ff5c49;--read:#ffc24b;--cool:#54c7ff;--v:#a78bfa;}
+  *{box-sizing:border-box}html,body{margin:0}
+  body{background:radial-gradient(120% 80% at 50% -10%,#10151f 0%,var(--ink) 60%) fixed,var(--ink);color:var(--text);
+    font-family:"Pretendard","Noto Sans KR",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;}
+  body::after{content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.038;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+
+  .sitenav{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:4px;flex-wrap:wrap;
+    padding:11px 24px;background:#0a0c11cc;backdrop-filter:blur(10px);border-bottom:1px solid var(--hair);font:600 13px/1 ui-monospace,monospace}
+  .sitenav__brand{color:var(--text);margin-right:14px;font-weight:800;letter-spacing:-.01em}.sitenav__brand b{color:var(--play)}
+  .sitenav a{color:var(--muted);text-decoration:none;padding:7px 12px;border-radius:8px;transition:.2s}
+  .sitenav a:hover{color:var(--text);background:#ffffff0a}.sitenav a.on{color:#0a0c11;background:var(--play)}
+
+  .top{max-width:1220px;margin:0 auto;padding:42px 24px 4px}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;font:600 12px/1 ui-monospace,monospace;letter-spacing:.24em;text-transform:uppercase;color:var(--play);margin:0 0 16px}
+  .eyebrow::before{content:"";width:22px;height:1px;background:var(--play)}
+  .top h1{margin:0;font-size:clamp(27px,4.4vw,46px);font-weight:800;letter-spacing:-.025em;line-height:1.08}
+  .top h1 em{font-style:normal;background:linear-gradient(90deg,var(--read),var(--play));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lede{margin:16px 0 0;max-width:60ch;color:var(--muted);font-size:15px}.lede b{color:var(--text);font-weight:600}
+  .note{margin:14px 0 0;font:600 12px/1.4 ui-monospace,monospace;color:var(--muted)}.note span{color:var(--cool)}
+  .rule{max-width:1220px;margin:20px auto 0;padding:0 24px}.rule i{display:block;height:1px;background:linear-gradient(90deg,var(--hair) 0%,transparent 60%)}
+
+  .grid{max-width:1220px;margin:22px auto 44px;padding:0 24px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:580px){.grid{grid-template-columns:1fr}}
+
+  .fx{background:linear-gradient(180deg,#171d27,#131822);border:1px solid var(--hair);border-radius:16px;overflow:hidden;
+    display:flex;flex-direction:column;height:280px;position:relative;box-shadow:0 1px 0 #ffffff0a inset,0 14px 34px -18px #000c}
+  .fx__bar{display:flex;align-items:center;gap:11px;padding:13px 15px;border-bottom:1px solid var(--hair);background:linear-gradient(180deg,var(--panel2),#171c25)}
+  .fx__no{font:800 12px/1 ui-monospace,monospace;color:var(--play);border:1px solid var(--play);border-radius:6px;padding:5px 7px;box-shadow:0 0 12px #ff5c4933}
+  .fx__name{font-size:14.5px;font-weight:700;letter-spacing:-.01em}
+  .fx__eng{margin-left:auto;font:600 10px/1 ui-monospace,monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;border:1px solid var(--hair);border-radius:20px;padding:5px 10px;white-space:nowrap}
+  .fx__info{margin-left:8px;width:26px;height:26px;flex:none;border-radius:50%;border:1px solid var(--hair2);background:transparent;color:var(--muted);font:800 13px/1 ui-monospace,monospace;cursor:pointer;display:grid;place-items:center;transition:.2s}
+  .fx__info:hover{border-color:var(--play);color:var(--play);box-shadow:0 0 12px #ff5c4933}
+  .fx__demo{flex:1;display:grid;place-items:center;overflow:hidden;position:relative;background:radial-gradient(130% 100% at 50% -12%,#1c2330 0%,#131822 74%)}
+  .fx__code{position:absolute;left:13px;bottom:13px;z-index:5;pointer-events:none;font:600 11px/1 ui-monospace,monospace;color:#d3d8df;background:#0a0d12cc;border:1px solid var(--hair);border-radius:7px;padding:6px 9px;max-width:calc(100% - 26px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;backdrop-filter:blur(4px)}
+  .fx__code b{color:var(--cool);font-weight:700}
+
+  .btn{padding:16px 28px;border-radius:14px;border:1px solid var(--hair2);color:var(--text);background:linear-gradient(180deg,#212a3c,#1a2130);font:800 17px/1 ui-monospace,monospace;cursor:pointer;user-select:none}
+
+  .info{position:absolute;inset:0;z-index:8;overflow:auto;padding:15px 16px 18px;background:linear-gradient(180deg,#0f141cf5,#0c1017fb);backdrop-filter:blur(6px);opacity:0;visibility:hidden;transform:translateY(8px);pointer-events:none;transition:.28s cubic-bezier(.2,.7,.2,1)}
+  .fx.open .info{opacity:1;visibility:visible;transform:none;pointer-events:auto}
+  .info__hd{display:flex;align-items:center;gap:8px;margin:0 0 12px}.info__hd h4{margin:0;font-size:15px;font-weight:800;letter-spacing:-.01em}
+  .info__x{margin-left:auto;width:26px;height:26px;flex:none;border-radius:8px;border:1px solid var(--hair2);background:transparent;color:var(--muted);cursor:pointer;font-size:13px;display:grid;place-items:center}
+  .info__x:hover{color:var(--play);border-color:var(--play)}
+  .lbl{font:700 10px/1 ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--play);display:block;margin:14px 0 6px}.lbl:first-of-type{margin-top:0}
+  .info p{margin:0;font-size:12.5px;color:#c8cdd5;line-height:1.55}
+  .info .cmd{margin:6px 0 0;font:600 11.5px/1.5 ui-monospace,monospace;color:#bfe6ff;background:#0a1520;border:1px solid #223243;border-radius:8px;padding:9px 10px;white-space:pre-wrap;word-break:break-word}
+  .info .ask{margin:6px 0 0;font-size:12.5px;color:#e7d6a8;background:#1a160c;border:1px solid #3a3016;border-left:3px solid var(--read);border-radius:8px;padding:9px 11px;line-height:1.55}
+
+  .foot{max-width:1220px;margin:0 auto 66px;padding:0 24px;color:var(--muted);font-size:13px;max-width:84ch}
+  .foot code{background:var(--panel);border:1px solid var(--hair);border-radius:5px;padding:1px 6px;color:var(--text)}.foot .k{color:var(--play);font-weight:700}
+
+  /* ============ 자동 반복 데모 (움직임 크게) ============ */
+  /* 01 리프트 */
+  .lift{animation:liftloop 2.4s ease-in-out infinite}
+  @keyframes liftloop{0%,12%{transform:translateY(0);box-shadow:0 6px 16px -8px #000a}
+    46%,70%{transform:translateY(-24px);box-shadow:0 34px 54px -16px #000e,0 0 0 1px var(--hair2)}
+    100%{transform:translateY(0);box-shadow:0 6px 16px -8px #000a}}
+  /* 02 3D 틸트 */
+  .tilt{width:170px;height:108px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(145deg,#2a3350,#1a2030);
+    border:1px solid var(--hair2);font:800 22px/1 ui-monospace,monospace;color:var(--cool);box-shadow:0 1px 0 #ffffff14 inset}
+  .tilt.autotilt{animation:tiltloop 3.6s ease-in-out infinite}
+  @keyframes tiltloop{0%{transform:perspective(600px) rotateX(0) rotateY(0)}
+    25%{transform:perspective(600px) rotateX(16deg) rotateY(-22deg)}
+    50%{transform:perspective(600px) rotateX(0) rotateY(0)}
+    75%{transform:perspective(600px) rotateX(-16deg) rotateY(22deg)}
+    100%{transform:perspective(600px) rotateX(0) rotateY(0)}}
+  /* 03 글로우 */
+  .glow{animation:glowloop 1.9s ease-in-out infinite}
+  @keyframes glowloop{0%,100%{box-shadow:0 0 0 1px #54c7ff44,0 0 8px #54c7ff22;filter:brightness(1)}
+    50%{box-shadow:0 0 0 1px var(--cool),0 0 46px #54c7ffdd;filter:brightness(1.18)}}
+  /* 04 샤인 스윕 */
+  .shine{position:relative;overflow:hidden}
+  .shine::after{content:"";position:absolute;top:0;left:-90%;width:70%;height:100%;transform:skewX(-18deg);
+    background:linear-gradient(100deg,transparent,#ffffff99,transparent);animation:sweep 2.3s ease-in-out infinite}
+  @keyframes sweep{0%,55%{left:-90%}80%,100%{left:150%}}
+  /* 05 언더라인 리빌 */
+  .ul{font:800 26px/1.3 "Pretendard";color:var(--text);text-decoration:none;cursor:pointer;
+    background:linear-gradient(var(--cool),var(--cool)) 0 100%/0% 3px no-repeat;animation:ulloop 2.4s ease-in-out infinite}
+  @keyframes ulloop{0%,18%{background-size:0% 3px}48%,72%{background-size:100% 3px}100%{background-size:0% 3px}}
+  /* 06 이미지 줌 */
+  .thumb{width:210px;height:130px;border-radius:16px;overflow:hidden;position:relative;border:1px solid var(--hair2)}
+  .thumb__img{position:absolute;inset:0;background:linear-gradient(160deg,#26406e,#6a3b7a);animation:ken 4.6s ease-in-out infinite alternate}
+  @keyframes ken{from{transform:scale(1)}to{transform:scale(1.26) translate(-4%,3%)}}
+  .thumb__img::before{content:"";position:absolute;right:26px;top:22px;width:38px;height:38px;border-radius:50%;background:radial-gradient(circle,#ffd98a,#ffb84d);box-shadow:0 0 28px #ffcf7a}
+  .thumb__img::after{content:"";position:absolute;left:0;right:0;bottom:0;height:52px;background:linear-gradient(#0000,#0f1522)}
+  .thumb__cap{position:absolute;left:12px;bottom:9px;z-index:2;font:800 12px/1 ui-monospace,monospace;color:#fff}
+  /* 07 스포트라이트 */
+  .spot{width:210px;height:126px;border-radius:16px;border:1px solid var(--hair2);display:grid;place-items:center;
+    font:800 14px/1 ui-monospace,monospace;color:var(--muted);
+    background:#151b26 radial-gradient(150px circle at var(--mx,50%) var(--my,50%),#54c7ff55,transparent 60%)}
+  /* 08 마그네틱 */
+  .mag{transition:transform .18s cubic-bezier(.2,.7,.2,1)}
+  /* 09 컬러 필 */
+  .fill{position:relative;overflow:hidden;border:1px solid var(--play);background:transparent;color:var(--play)}
+  .fill::before{content:"";position:absolute;inset:0;background:var(--play);transform:scaleX(0);transform-origin:left;animation:fillx 2.4s ease-in-out infinite}
+  @keyframes fillx{0%,14%{transform:scaleX(0)}44%,72%{transform:scaleX(1)}100%{transform:scaleX(0)}}
+  .fill span{position:relative;z-index:1;animation:fillc 2.4s ease-in-out infinite}
+  @keyframes fillc{0%,14%{color:var(--play)}44%,72%{color:#0a0c11}100%{color:var(--play)}}
+
+  @media(prefers-reduced-motion:reduce){.lift,.tilt.autotilt,.glow,.shine::after,.ul,.thumb__img,.fill::before,.fill span{animation:none!important}}
+</style>
+</head>
+<body>
+
+<nav class="sitenav">
+  <a class="sitenav__brand" href="index.html" style="color:var(--text);padding:0">웹 애니메이션 <b>사전</b></a>
+  <a href="scroll-scrub-lab.html">스크롤</a>
+  <a href="hover-effects-lab.html" class="on">호버</a>
+  <a href="signature-effects-lab.html">시그니처</a>
+  <a href="reveal-effects-lab.html">등장·리빌</a>
+  <a href="micro-interactions-lab.html">마이크로</a>
+  <a href="loading-states-lab.html">로딩·상태</a>
+  <a href="insane-effects-lab.html">실험실</a>
+</nav>
+
+<header class="top">
+  <p class="eyebrow">브라우저의 재발견 · 마우스 호버</p>
+  <h1>마우스를 올리면 뭔가 일어난다 — <em>그 효과의 이름</em></h1>
+  <p class="lede">코드를 외우려는 게 아니다. <b>이 효과의 이름</b>을 눈으로 찾아 AI에게 “이거 리프트로 해줘”처럼 <b>정확히 지시</b>하기 위한 용어집이다. 카드의 <b>‘?’</b>로 준비물·지시문·코드를 확인하라.</p>
+  <p class="note"><span>↻</span> 모든 데모는 자동으로 반복 재생됩니다. 마우스를 올리면 직접 조작도 가능해요.</p>
+</header>
+<div class="rule"><i></i></div>
+
+<main class="grid">
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">01</span><span class="fx__name">리프트</span><span class="fx__eng">lift · elevate</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><button class="btn lift">LIFT</button><div class="fx__code"><b>transform</b>: translateY(−24px)</div></div>
+    <div class="info"><div class="info__hd"><h4>리프트 (엘리베이션)</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>순수 CSS. 요소를 위로 올리고 그림자를 키우면 ‘떠오르는’ 느낌. 카드·버튼에 가장 흔히 쓴다.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“호버하면 카드가 위로 떠오르며 그림자가 커지게 해줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">.card:hover{ transform: translateY(-24px);
+  box-shadow: 0 34px 54px -16px #000; }</div></div>
+  </section>
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">02</span><span class="fx__name">3D 틸트</span><span class="fx__eng">3d tilt</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><div class="tilt autotilt" data-tilt>3D</div><div class="fx__code"><b>perspective</b>() rotateX/Y()</div></div>
+    <div class="info"><div class="info__hd"><h4>3D 틸트</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>커서 위치를 rotateX/rotateY로 변환. 자동 데모는 계속 기울고, 마우스를 올리면 커서를 따라 기운다. <b>perspective</b>가 3D의 핵심.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“카드가 마우스 위치에 따라 3D로 기울어지게 해줘(perspective + rotateX/Y).”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">el.style.transform =
+ `perspective(600px)
+  rotateX(${rx}deg) rotateY(${ry}deg)`;</div></div>
+  </section>
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">03</span><span class="fx__name">글로우</span><span class="fx__eng">glow · bloom</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><button class="btn glow">GLOW</button><div class="fx__code"><b>box-shadow</b>: 0 0 46px 컬러</div></div>
+    <div class="info"><div class="info__hd"><h4>글로우 (블룸)</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>순수 CSS. 색이 번지는 box-shadow + 살짝 밝기(brightness). CTA 버튼 강조에 좋다.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“호버하면 버튼 주변으로 색이 은은하게 빛나게(글로우) 해줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">.btn:hover{ box-shadow: 0 0 46px #54c7ff;
+  filter: brightness(1.18); }</div></div>
+  </section>
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">04</span><span class="fx__name">샤인 스윕</span><span class="fx__eng">shine · sheen</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><button class="btn shine">SHINE</button><div class="fx__code"><b>::after</b> 광택 바 이동</div></div>
+    <div class="info"><div class="info__hd"><h4>샤인 스윕</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>순수 CSS. 기울인 흰 그라디언트 바(::after)를 요소 위로 지나가게 한다. <b>overflow:hidden</b> 필수.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“호버하면 버튼 위로 빛이 한 번 스윽 지나가는 샤인 효과 넣어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">.btn::after{ /* 흰 그라디언트 바 */ left:-90%; }
+.btn:hover::after{ left:150%; transition:.6s; }</div></div>
+  </section>
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">05</span><span class="fx__name">언더라인 리빌</span><span class="fx__eng">underline reveal</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><a class="ul">텍스트 링크</a><div class="fx__code"><b>background-size</b>: 0% → 100% 3px</div></div>
+    <div class="info"><div class="info__hd"><h4>언더라인 리빌</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>순수 CSS. 밑줄을 background 그라디언트로 만들고 <b>background-size</b>의 너비를 0→100%로 늘린다. 링크·메뉴에 필수.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“링크에 호버하면 밑줄이 왼쪽에서 오른쪽으로 그어지게 해줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">a{ background:linear-gradient(#54c7ff,#54c7ff)
+   0 100%/0% 3px no-repeat; transition:.35s; }
+a:hover{ background-size:100% 3px; }</div></div>
+  </section>
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">06</span><span class="fx__name">이미지 줌</span><span class="fx__eng">image zoom</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><div class="thumb"><div class="thumb__img"></div><span class="thumb__cap">ZOOM</span></div><div class="fx__code"><b>overflow:hidden</b> + scale(1.26)</div></div>
+    <div class="info"><div class="info__hd"><h4>이미지 줌 (Ken Burns)</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>순수 CSS. 이미지 컨테이너에 <b>overflow:hidden</b>, 안의 이미지를 scale로 확대. 프레임은 고정, 이미지만 커진다.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“썸네일에 호버하면 안의 이미지만 천천히 확대되게 해줘(프레임은 고정).”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">.thumb{ overflow:hidden; }
+.thumb:hover img{ transform:scale(1.26); }</div></div>
+  </section>
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">07</span><span class="fx__name">스포트라이트</span><span class="fx__eng">cursor glow</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><div class="spot" data-spot>커서를 따라온다</div><div class="fx__code"><b>radial-gradient</b>(at var(--mx) var(--my))</div></div>
+    <div class="info"><div class="info__hd"><h4>스포트라이트 (커서 글로우)</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>마우스 좌표를 <b>CSS 변수(--mx, --my)</b>로 넘기고, 그 지점을 중심으로 radial-gradient 빛을 그린다. SaaS 카드에서 자주 본다.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“카드 위에서 마우스를 따라 빛이 움직이는 스포트라이트 효과 만들어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">el.style.setProperty('--mx', x+'px');
+/* CSS: radial-gradient(circle at
+   var(--mx) var(--my), #fff3, transparent) */</div></div>
+  </section>
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">08</span><span class="fx__name">마그네틱</span><span class="fx__eng">magnetic pull</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><button class="btn mag" data-mag>MAGNET</button><div class="fx__code"><b>translate</b>(dx×0.4, dy×0.4)</div></div>
+    <div class="info"><div class="info__hd"><h4>마그네틱 (자석 끌림)</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>버튼이 커서 쪽으로 살짝 끌려간다. 커서와의 거리(dx,dy)에 배율을 곱해 translate. 자동 데모는 보이지 않는 점을 따라 움직인다.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“버튼이 근처 마우스 쪽으로 자석처럼 살짝 끌려오게 해줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">el.style.transform =
+  `translate(${dx*0.4}px, ${dy*0.4}px)`;
+// 벗어나면 translate(0,0)로 복귀</div></div>
+  </section>
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">09</span><span class="fx__name">컬러 필</span><span class="fx__eng">fill swipe</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><button class="btn fill"><span>FILL</span></button><div class="fx__code"><b>::before</b> scaleX(0) → scaleX(1)</div></div>
+    <div class="info"><div class="info__hd"><h4>컬러 필 (스와이프)</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>순수 CSS. 배경 블록(::before)을 <b>scaleX(0→1)</b>로 채우고 글자색을 뒤집는다. 아웃라인 버튼에 자주 쓴다.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“아웃라인 버튼에 호버하면 색이 왼쪽에서 차오르고 글자색이 반전되게 해줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">.btn::before{ transform:scaleX(0);
+  transform-origin:left; }
+.btn:hover::before{ transform:scaleX(1); }</div></div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <p><span class="k">9가지 호버 효과 —</span> 대부분 순수 CSS <code>:hover</code>. ②⑦⑧(틸트·스포트라이트·마그네틱)만 마우스 좌표를 JS로 넘긴다. 각 카드 ‘?’에 준비물·AI 지시문·코드.</p>
+</footer>
+
+<script>
+"use strict";
+const REDUCE=matchMedia("(prefers-reduced-motion:reduce)").matches, TAU=Math.PI*2;
+
+document.querySelectorAll(".fx").forEach((p,i)=>{
+  if(!REDUCE)p.animate([{opacity:0,transform:"translateY(18px)"},{opacity:1,transform:"none"}],
+    {duration:640,delay:i*70,easing:"cubic-bezier(.2,.7,.2,1)",fill:"backwards"});
+  const b=p.querySelector(".fx__info"),x=p.querySelector(".info__x");
+  if(b)b.addEventListener("click",()=>p.classList.toggle("open"));
+  if(x)x.addEventListener("click",()=>p.classList.remove("open"));
+});
+
+/* 공통 자동 클럭 */
+let T=0;function clock(){T+=0.016;requestAnimationFrame(clock);}if(!REDUCE)clock();
+
+/* 02 3D 틸트 — 호버 시 커서, 벗어나면 자동 */
+document.querySelectorAll("[data-tilt]").forEach(el=>{
+  el.addEventListener("mouseenter",()=>el.classList.remove("autotilt"));
+  el.addEventListener("mousemove",e=>{const r=el.getBoundingClientRect();
+    const px=(e.clientX-r.left)/r.width,py=(e.clientY-r.top)/r.height;
+    el.style.transform="perspective(600px) rotateX("+((0.5-py)*24)+"deg) rotateY("+((px-0.5)*26)+"deg)";});
+  el.addEventListener("mouseleave",()=>{el.style.transform="";el.classList.add("autotilt");});
+});
+
+/* 07 스포트라이트 — 자동 원운동 + 커서 */
+document.querySelectorAll("[data-spot]").forEach(el=>{
+  let hover=false;
+  el.addEventListener("mouseenter",()=>hover=true);
+  el.addEventListener("mouseleave",()=>hover=false);
+  el.addEventListener("mousemove",e=>{const r=el.getBoundingClientRect();
+    el.style.setProperty("--mx",(e.clientX-r.left)+"px");el.style.setProperty("--my",(e.clientY-r.top)+"px");});
+  if(!REDUCE)(function auto(){const r=el.getBoundingClientRect();
+    if(!hover){el.style.setProperty("--mx",(r.width*(0.5+0.36*Math.cos(T*1.3)))+"px");
+      el.style.setProperty("--my",(r.height*(0.5+0.34*Math.sin(T*1.7)))+"px");}
+    requestAnimationFrame(auto);})();
+});
+
+/* 08 마그네틱 — 자동 궤도 + 커서 */
+document.querySelectorAll("[data-mag]").forEach(el=>{
+  let hover=false,tx=0,ty=0,cx=0,cy=0;
+  el.addEventListener("mouseenter",()=>hover=true);
+  el.addEventListener("mouseleave",()=>{hover=false;});
+  el.addEventListener("mousemove",e=>{const r=el.getBoundingClientRect();
+    tx=(e.clientX-(r.left+r.width/2))*0.4;ty=(e.clientY-(r.top+r.height/2))*0.4;});
+  if(!REDUCE)(function loop(){if(!hover){tx=Math.cos(T*1.6)*26;ty=Math.sin(T*2.1)*16;}
+    cx+=(tx-cx)*0.18;cy+=(ty-cy)*0.18;el.style.transform="translate("+cx+"px,"+cy+"px)";
+    requestAnimationFrame(loop);})();
+});
+</script>
+</body>
+</html>

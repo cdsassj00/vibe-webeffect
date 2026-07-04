@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>시그니처 효과 · 브라우저의 재발견</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<!-- 브라우저의 재발견 — 웹 애니메이션 사전 : 시그니처 편. 모든 데모 자동 반복 재생. -->
+<style>
+  :root{--ink:#0a0c11;--panel:#141922;--panel2:#1b212c;--hair:#2a313d;--hair2:#39424f;
+    --text:#eef0f3;--muted:#8b93a0;--play:#ff5c49;--read:#ffc24b;--cool:#54c7ff;--v:#a78bfa;}
+  *{box-sizing:border-box}html,body{margin:0}
+  body{background:radial-gradient(120% 80% at 50% -10%,#10151f 0%,var(--ink) 60%) fixed,var(--ink);color:var(--text);
+    font-family:"Pretendard","Noto Sans KR",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;}
+  body::after{content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.038;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+
+  .sitenav{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:11px 24px;background:#0a0c11cc;backdrop-filter:blur(10px);border-bottom:1px solid var(--hair);font:600 13px/1 ui-monospace,monospace}
+  .sitenav__brand{color:var(--text);margin-right:14px;font-weight:800;letter-spacing:-.01em}.sitenav__brand b{color:var(--play)}
+  .sitenav a{color:var(--muted);text-decoration:none;padding:7px 12px;border-radius:8px;transition:.2s}
+  .sitenav a:hover{color:var(--text);background:#ffffff0a}.sitenav a.on{color:#0a0c11;background:var(--play)}
+
+  .top{max-width:1220px;margin:0 auto;padding:42px 24px 4px}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;font:600 12px/1 ui-monospace,monospace;letter-spacing:.24em;text-transform:uppercase;color:var(--play);margin:0 0 16px}
+  .eyebrow::before{content:"";width:22px;height:1px;background:var(--play)}
+  .top h1{margin:0;font-size:clamp(27px,4.4vw,46px);font-weight:800;letter-spacing:-.025em;line-height:1.08}
+  .top h1 em{font-style:normal;background:linear-gradient(90deg,var(--v),var(--cool));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lede{margin:16px 0 0;max-width:60ch;color:var(--muted);font-size:15px}.lede b{color:var(--text);font-weight:600}
+  .note{margin:14px 0 0;font:600 12px/1.4 ui-monospace,monospace;color:var(--muted)}.note span{color:var(--cool)}
+  .rule{max-width:1220px;margin:20px auto 0;padding:0 24px}.rule i{display:block;height:1px;background:linear-gradient(90deg,var(--hair) 0%,transparent 60%)}
+
+  .grid{max-width:1220px;margin:22px auto 44px;padding:0 24px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:580px){.grid{grid-template-columns:1fr}}
+
+  .fx{background:linear-gradient(180deg,#171d27,#131822);border:1px solid var(--hair);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;height:288px;position:relative;box-shadow:0 1px 0 #ffffff0a inset,0 14px 34px -18px #000c}
+  .fx__bar{display:flex;align-items:center;gap:11px;padding:13px 15px;border-bottom:1px solid var(--hair);background:linear-gradient(180deg,var(--panel2),#171c25)}
+  .fx__no{font:800 12px/1 ui-monospace,monospace;color:var(--play);border:1px solid var(--play);border-radius:6px;padding:5px 7px;box-shadow:0 0 12px #ff5c4933}
+  .fx__name{font-size:14px;font-weight:700;letter-spacing:-.01em}
+  .fx__eng{margin-left:auto;font:600 10px/1 ui-monospace,monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;border:1px solid var(--hair);border-radius:20px;padding:5px 10px;white-space:nowrap}
+  .fx__info{margin-left:8px;width:26px;height:26px;flex:none;border-radius:50%;border:1px solid var(--hair2);background:transparent;color:var(--muted);font:800 13px/1 ui-monospace,monospace;cursor:pointer;display:grid;place-items:center;transition:.2s}
+  .fx__info:hover{border-color:var(--play);color:var(--play);box-shadow:0 0 12px #ff5c4933}
+  .fx__demo{flex:1;display:grid;place-items:center;overflow:hidden;position:relative;background:radial-gradient(130% 100% at 50% -12%,#1c2330 0%,#131822 74%)}
+  .fx__code{position:absolute;left:13px;bottom:13px;z-index:5;pointer-events:none;font:600 11px/1 ui-monospace,monospace;color:#d3d8df;background:#0a0d12cc;border:1px solid var(--hair);border-radius:7px;padding:6px 9px;max-width:calc(100% - 26px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;backdrop-filter:blur(4px)}
+  .fx__code b{color:var(--cool);font-weight:700}
+
+  .info{position:absolute;inset:0;z-index:8;overflow:auto;padding:15px 16px 18px;background:linear-gradient(180deg,#0f141cf5,#0c1017fb);backdrop-filter:blur(6px);opacity:0;visibility:hidden;transform:translateY(8px);pointer-events:none;transition:.28s cubic-bezier(.2,.7,.2,1)}
+  .fx.open .info{opacity:1;visibility:visible;transform:none;pointer-events:auto}
+  .info__hd{display:flex;align-items:center;gap:8px;margin:0 0 12px}.info__hd h4{margin:0;font-size:15px;font-weight:800;letter-spacing:-.01em}
+  .info__x{margin-left:auto;width:26px;height:26px;flex:none;border-radius:8px;border:1px solid var(--hair2);background:transparent;color:var(--muted);cursor:pointer;font-size:13px;display:grid;place-items:center}
+  .info__x:hover{color:var(--play);border-color:var(--play)}
+  .lbl{font:700 10px/1 ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--play);display:block;margin:14px 0 6px}.lbl:first-of-type{margin-top:0}
+  .info p{margin:0;font-size:12.5px;color:#c8cdd5;line-height:1.55}
+  .info .cmd{margin:6px 0 0;font:600 11.5px/1.5 ui-monospace,monospace;color:#bfe6ff;background:#0a1520;border:1px solid #223243;border-radius:8px;padding:9px 10px;white-space:pre-wrap;word-break:break-word}
+  .info .ask{margin:6px 0 0;font-size:12.5px;color:#e7d6a8;background:#1a160c;border:1px solid #3a3016;border-left:3px solid var(--read);border-radius:8px;padding:9px 11px;line-height:1.55}
+
+  .foot{max-width:1220px;margin:0 auto 66px;padding:0 24px;color:var(--muted);font-size:13px;max-width:84ch}
+  .foot code{background:var(--panel);border:1px solid var(--hair);border-radius:5px;padding:1px 6px;color:var(--text)}.foot .k{color:var(--play);font-weight:700}
+
+  /* 01 스크램블 */.scramble{font:800 34px/1 ui-monospace,monospace;color:var(--cool);letter-spacing:3px}
+  /* 02 스플릿 */.split{font:800 34px/1 ui-monospace,monospace;color:var(--text);letter-spacing:2px}
+  .split span{display:inline-block;opacity:0;transform:translateY(26px) rotate(8deg);transition:opacity .55s cubic-bezier(.2,.7,.2,1),transform .55s cubic-bezier(.2,.7,.2,1)}
+  .split.go span{opacity:1;transform:none}
+  /* 03 커스텀 커서 */.cursorbox{position:absolute;inset:0;display:grid;place-items:center;cursor:none}
+  .cursorbox .lbl2{font:800 21px/1.5 "Pretendard";color:var(--muted);text-align:center}
+  .cursorbox .ct{color:var(--cool);border-bottom:2px solid var(--cool)}
+  .ring{position:absolute;top:0;left:0;width:30px;height:30px;border:2px solid var(--play);border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;mix-blend-mode:screen;transition:width .2s,height .2s,background .2s}
+  .ring.big{width:74px;height:74px;background:#ff5c4926}
+  /* 04 클립 리빌 */.curtain{position:relative;width:210px;height:122px;border-radius:16px;overflow:hidden;border:1px solid var(--hair2)}
+  .curtain__b,.curtain__f{position:absolute;inset:0;display:grid;place-items:center;font:800 19px "Pretendard"}
+  .curtain__b{background:linear-gradient(135deg,#26406e,#6a3b7a);color:#fff}
+  .curtain__f{background:linear-gradient(135deg,#1b2230,#2a3350);color:var(--cool);clip-path:inset(0 0 0 0);animation:curtainloop 2.8s ease-in-out infinite}
+  @keyframes curtainloop{0%,18%{clip-path:inset(0 0 0 0)}52%,74%{clip-path:inset(0 100% 0 0)}100%{clip-path:inset(0 0 0 0)}}
+  /* 05 글리치 */.glitch{font:900 40px/1 ui-monospace,monospace;color:var(--text);letter-spacing:4px;animation:glitch .5s steps(2,end) infinite}
+  @keyframes glitch{0%{text-shadow:3px 0 #ff2d55,-3px 0 #00e5ff;transform:translate(0)}
+    25%{text-shadow:-3px 0 #ff2d55,3px 0 #00e5ff;transform:translate(-2px,1px)}
+    50%{text-shadow:3px 0 #ff2d55,-3px 0 #00e5ff;transform:translate(2px,-1px)}
+    75%{text-shadow:-3px 0 #ff2d55,3px 0 #00e5ff;transform:translate(-1px,1px)}
+    100%{text-shadow:3px 0 #ff2d55,-3px 0 #00e5ff;transform:translate(0)}}
+  /* 06 스티키 스택 */.stackwrap{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;padding:0 20px}
+  .stackwrap::-webkit-scrollbar{width:8px}.stackwrap::-webkit-scrollbar-thumb{background:var(--play);border-radius:20px}
+  .scard{position:sticky;top:16px;height:78px;border-radius:14px;display:flex;align-items:center;padding:0 18px;font:800 16px "Pretendard";color:#0a0c11;margin-bottom:16px;box-shadow:0 12px 26px -10px #000c}
+  .scard:nth-child(2){background:#ffc24b;top:16px}.scard:nth-child(3){background:#54c7ff;top:28px}
+  .scard:nth-child(4){background:#a78bfa;top:40px}.scard:nth-child(5){background:#ff5c49;top:52px}
+  .stackwrap .sp{height:30px}
+  /* 07 마퀴 */.marq{width:100%;overflow:hidden;-webkit-mask:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+  .marq__t{display:inline-flex;white-space:nowrap;animation:marq 7s linear infinite;font:900 32px/1 ui-monospace,monospace}
+  .marq__t span{padding:0 20px;color:var(--text)}.marq__t span:nth-child(even){color:var(--play)}
+  @keyframes marq{to{transform:translateX(-50%)}}
+  /* 08 블롭 */.blob{width:130px;height:130px;filter:blur(1px);box-shadow:0 0 50px -6px #a78bfa88;background:conic-gradient(from 0deg,#ff5c49,#a78bfa,#54c7ff,#ffc24b,#ff5c49);border-radius:42% 58% 63% 37%/45% 38% 62% 55%;animation:blob 6s ease-in-out infinite}
+  @keyframes blob{0%,100%{border-radius:42% 58% 63% 37%/45% 38% 62% 55%;transform:rotate(0)}50%{border-radius:58% 42% 37% 63%/38% 55% 45% 62%;transform:rotate(180deg)}}
+  /* 09 숫자 롤 */.roll{display:flex;gap:2px;font:900 60px/1 ui-monospace,monospace;color:var(--read)}
+  .reel{height:1em;overflow:hidden;display:inline-block}.reel b{display:block;transition:transform 1s cubic-bezier(.2,.85,.2,1)}
+  .reel b span{display:block;height:1em;text-align:center}
+
+  .noanim, .noanim span{transition:none!important}
+
+  @media(prefers-reduced-motion:reduce){.curtain__f,.glitch,.marq__t,.blob,.reel b{animation:none!important}}
+</style>
+</head>
+<body>
+
+<nav class="sitenav">
+  <a class="sitenav__brand" href="index.html" style="color:var(--text);padding:0">웹 애니메이션 <b>사전</b></a>
+  <a href="scroll-scrub-lab.html">스크롤</a>
+  <a href="hover-effects-lab.html">호버</a>
+  <a href="signature-effects-lab.html" class="on">시그니처</a>
+  <a href="reveal-effects-lab.html">등장·리빌</a>
+  <a href="micro-interactions-lab.html">마이크로</a>
+  <a href="loading-states-lab.html">로딩·상태</a>
+  <a href="insane-effects-lab.html">실험실</a>
+</nav>
+
+<header class="top">
+  <p class="eyebrow">브라우저의 재발견 · 시그니처 효과</p>
+  <h1>어워즈 사이트가 쓰는 <em>'와' 소리 나는</em> 효과</h1>
+  <p class="lede">고급 에이전시·포트폴리오 사이트가 감탄을 자아내는 9가지 시그니처 애니메이션. 카드의 <b>‘?’</b>로 준비물·AI 지시문·핵심 코드를 확인하라. 화려해 보여도 대부분 순수 CSS이거나 JS 몇 줄이다.</p>
+  <p class="note"><span>↻</span> 모든 데모는 자동으로 반복 재생됩니다.</p>
+</header>
+<div class="rule"><i></i></div>
+
+<main class="grid">
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">01</span><span class="fx__name">텍스트 스크램블</span><span class="fx__eng">scramble</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><span class="scramble" data-text="DECODE" data-scramble>DECODE</span><div class="fx__code"><b>랜덤 글자</b> → 왼쪽부터 확정</div></div>
+    <div class="info"><div class="info__hd"><h4>텍스트 스크램블 (디코드)</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>JS + 랜덤 글자 세트. 최종 텍스트를 정해두고 랜덤 문자로 채웠다가 왼쪽부터 확정한다.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“글자들이 랜덤 문자로 지직거리다 원래 텍스트로 하나씩 확정되는 디코드 효과 만들어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">out += (i<reveal) ? final[i]
+  : chars[Math.random()*chars.length|0];</div></div>
+  </section>
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">02</span><span class="fx__name">스플릿 스태거</span><span class="fx__eng">split · stagger</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><span class="split" data-text="STAGGER" data-split></span><div class="fx__code"><b>글자별 span</b> + transition-delay</div></div>
+    <div class="info"><div class="info__hd"><h4>스플릿 텍스트 스태거</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>텍스트를 <b>글자 단위 span</b>으로 쪼개고 각 span에 순차 지연. GSAP <b>SplitText</b>가 유명하지만 순수 JS로도 된다.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“텍스트를 글자별로 쪼개서 아래에서 하나씩 순서대로 올라오게 해줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">[...text].forEach((ch,i)=>{
+  span.style.transitionDelay = i*45+"ms"; });</div></div>
+  </section>
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">03</span><span class="fx__name">커스텀 커서</span><span class="fx__eng">cursor follower</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><div class="cursorbox" data-cursor><div class="lbl2">커서가 자동으로 돌아다니다<br><span class="ct">이 링크</span>에서 커진다</div><div class="ring"></div></div><div class="fx__code"><b>ring</b>을 마우스로 lerp</div></div>
+    <div class="info"><div class="info__hd"><h4>커스텀 커서 (팔로워)</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>따라다니는 <b>요소(div)</b> + 마우스 좌표 lerp 추적. 기본 커서는 <b>cursor:none</b>으로 숨긴다.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“마우스를 살짝 늦게 따라오는 커스텀 커서를 만들고, 링크 위에선 커지게 해줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">rx += (mouseX - rx) * 0.18; // 관성
+ring.style.transform=`translate(${rx}px,${ry}px)`;</div></div>
+  </section>
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">04</span><span class="fx__name">클립 리빌</span><span class="fx__eng">clip-path curtain</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><div class="curtain"><div class="curtain__b">REVEALED</div><div class="curtain__f">CURTAIN</div></div><div class="fx__code"><b>clip-path</b>: inset(0 100% 0 0)</div></div>
+    <div class="info"><div class="info__hd"><h4>클립패스 커튼 리빌</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>겹친 <b>두 레이어</b> + <b>clip-path</b>(또는 mask). 앞 레이어를 옆으로 닦으면 뒤가 드러난다. 순수 CSS.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“앞 레이어가 옆으로 닦이며 뒤 내용이 드러나는 커튼 리빌 만들어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">.front{ clip-path:inset(0 0 0 0); transition:.55s }
+.front:hover{ clip-path:inset(0 100% 0 0) }</div></div>
+  </section>
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">05</span><span class="fx__name">글리치 / RGB 스플릿</span><span class="fx__eng">glitch</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><span class="glitch">GLITCH</span><div class="fx__code"><b>text-shadow</b> 빨강/청록 + 흔들림</div></div>
+    <div class="info"><div class="info__hd"><h4>글리치 · RGB 스플릿</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>순수 CSS. 텍스트를 <b>빨강·청록으로 분리</b>(text-shadow)하고 keyframes로 흔든다.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“텍스트가 RGB로 갈라지며 지직거리는 글리치 효과 넣어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">text-shadow:3px 0 #ff2d55,-3px 0 #00e5ff;
+transform:translate(-2px,1px); /* keyframes 반복 */</div></div>
+  </section>
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">06</span><span class="fx__name">스티키 스택 카드</span><span class="fx__eng">sticky stack</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><div class="stackwrap" data-stack><div class="sp"></div><div class="scard">CARD 01</div><div class="scard">CARD 02</div><div class="scard">CARD 03</div><div class="scard">CARD 04</div><div class="sp"></div></div><div class="fx__code"><b>position</b>: sticky; top: 16px</div></div>
+    <div class="info"><div class="info__hd"><h4>스티키 스택 카드</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>스크롤 컨테이너 + 카드마다 <b>position:sticky</b>. 각 카드가 위에 고정되며 뒤 카드가 그 위로 쌓인다. 순수 CSS.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“스크롤하면 카드들이 위쪽에 하나씩 고정되며 겹쳐 쌓이게 해줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">.card{ position: sticky; top: 16px; }
+/* 카드마다 top을 조금씩 늘리면 계단식 */</div></div>
+  </section>
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">07</span><span class="fx__name">인피니트 마퀴</span><span class="fx__eng">marquee</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><div class="marq"><div class="marq__t"><span>DESIGN</span><span>MOTION</span><span>SCROLL</span><span>REVEAL</span><span>DESIGN</span><span>MOTION</span><span>SCROLL</span><span>REVEAL</span></div></div><div class="fx__code"><b>translateX</b>(-50%) 루프 + 내용 2배</div></div>
+    <div class="info"><div class="info__hd"><h4>인피니트 마퀴 (티커)</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>순수 CSS. 내용을 <b>2번 복제</b>해 이어붙이고 트랙을 -50%까지 이동하면 끊김 없이 무한 반복.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“텍스트가 끊김 없이 계속 흐르는 무한 마퀴 만들어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">@keyframes marq{ to{ transform:translateX(-50%) } }
+.track{ animation:marq 7s linear infinite } /* 내용 2세트 */</div></div>
+  </section>
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">08</span><span class="fx__name">모프 블롭</span><span class="fx__eng">morphing blob</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><div class="blob"></div><div class="fx__code"><b>border-radius</b> 애니메이션 + rotate</div></div>
+    <div class="info"><div class="info__hd"><h4>모프 블롭 (유기적 변형)</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>순수 CSS. <b>border-radius</b> 값을 두 상태 사이로 애니메이션하면 유기적으로 꿈틀. 그라디언트 + 살짝 blur로 고급스럽게.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“그라디언트 덩어리가 유기적으로 모양이 바뀌며 도는 블롭 배경 만들어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">@keyframes blob{
+ 0%,100%{ border-radius:42% 58% 63% 37%/45% 38% 62% 55% }
+ 50%    { border-radius:58% 42% 37% 63%/38% 55% 45% 62% } }</div></div>
+  </section>
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">09</span><span class="fx__name">숫자 롤 카운터</span><span class="fx__eng">number roll</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><div class="roll" data-roll><span class="reel"></span><span class="reel"></span><span class="reel"></span></div><div class="fx__code"><b>translateY</b>(-digit × 1em)</div></div>
+    <div class="info"><div class="info__hd"><h4>숫자 롤 (슬롯머신)</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>0~9를 <b>세로로 쌓은 릴</b> + <b>overflow:hidden</b>. 목표 숫자만큼 translateY로 굴려 멈춘다. 통계·가격 카운터에 자주.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“숫자가 슬롯머신처럼 세로로 굴러 최종 값에 멈추는 카운터 만들어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">reel.style.transform = `translateY(${-digit}em)`;</div></div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <p><span class="k">9가지 시그니처 효과 —</span> ④⑤⑥⑦⑧은 순수 CSS, ①②③⑨만 JS 몇 줄. 실무에선 GSAP·Framer Motion·Lenis 같은 라이브러리로 더 쉽게 만들기도 한다.</p>
+</footer>
+
+<script>
+"use strict";
+const REDUCE=matchMedia("(prefers-reduced-motion:reduce)").matches;
+document.querySelectorAll(".fx").forEach((p,i)=>{
+  if(!REDUCE)p.animate([{opacity:0,transform:"translateY(18px)"},{opacity:1,transform:"none"}],{duration:640,delay:i*70,easing:"cubic-bezier(.2,.7,.2,1)",fill:"backwards"});
+  const b=p.querySelector(".fx__info"),x=p.querySelector(".info__x");
+  if(b)b.addEventListener("click",()=>p.classList.toggle("open"));
+  if(x)x.addEventListener("click",()=>p.classList.remove("open"));
+});
+
+/* 01 스크램블 (자동 반복) */
+document.querySelectorAll("[data-scramble]").forEach(el=>{
+  const final=el.dataset.text,chars="!<>-_/[]{}=+*^?#01ABXYZ$%&";
+  function run(){const start=performance.now(),dur=850;
+    function tick(now){const t=Math.min(1,(now-start)/dur),reveal=t*final.length;let out="";
+      for(let i=0;i<final.length;i++)out+=(i<reveal-0.3)?final[i]:chars[Math.random()*chars.length|0];
+      el.textContent=out;if(t<1)el._r=requestAnimationFrame(tick);else el.textContent=final;}
+    cancelAnimationFrame(el._r);el._r=requestAnimationFrame(tick);}
+  el.addEventListener("mouseenter",run);run();if(!REDUCE)setInterval(run,2800);
+});
+
+/* 02 스플릿 (자동 반복) */
+document.querySelectorAll("[data-split]").forEach(el=>{
+  const t=el.dataset.text;el.innerHTML="";
+  [...t].forEach((ch,i)=>{const s=document.createElement("span");s.textContent=ch===" "?"\u00A0":ch;s.style.transitionDelay=(i*45)+"ms";el.appendChild(s);});
+  const go=()=>{el.classList.add("noanim");el.classList.remove("go");void el.offsetWidth;
+    el.classList.remove("noanim");void el.offsetWidth;el.classList.add("go");};
+  el.closest(".fx__demo").addEventListener("mouseenter",go);go();if(!REDUCE)setInterval(go,2600);
+});
+
+/* 03 커스텀 커서 (자동 궤도 + 커서) */
+document.querySelectorAll("[data-cursor]").forEach(box=>{
+  const ring=box.querySelector(".ring"),ct=box.querySelector(".ct");
+  let mx=0,my=0,rx=0,ry=0,auto=true,T=0;
+  box.addEventListener("mousemove",e=>{const r=box.getBoundingClientRect();mx=e.clientX-r.left;my=e.clientY-r.top;auto=false;});
+  box.addEventListener("mouseleave",()=>auto=true);
+  (function loop(){T+=0.016;const r=box.getBoundingClientRect();
+    if(auto&&!REDUCE){mx=r.width*(0.5+0.34*Math.cos(T*1.1));my=r.height*(0.5+0.32*Math.sin(T*1.5));}
+    rx+=(mx-rx)*0.16;ry+=(my-ry)*0.16;ring.style.transform="translate("+rx+"px,"+ry+"px) translate(-50%,-50%)";
+    if(ct){const cr=ct.getBoundingClientRect(),br=box.getBoundingClientRect();
+      const inx=rx>cr.left-br.left-14&&rx<cr.right-br.left+14&&ry>cr.top-br.top-14&&ry<cr.bottom-br.top+14;
+      ring.classList.toggle("big",inx);}
+    requestAnimationFrame(loop);})();
+});
+
+/* 06 스티키 스택 (자동 스크롤, 호버 시 멈춤) */
+document.querySelectorAll("[data-stack]").forEach(el=>{
+  let hover=false,T=0;el.addEventListener("mouseenter",()=>hover=true);el.addEventListener("mouseleave",()=>hover=false);
+  if(!REDUCE)(function loop(){T+=0.006;const max=el.scrollHeight-el.clientHeight;
+    if(!hover){const tri=(Math.sin(T)*0.5+0.5);el.scrollTop=tri*max;}requestAnimationFrame(loop);})();
+});
+
+/* 09 숫자 롤 (자동 반복) */
+document.querySelectorAll("[data-roll]").forEach(roll=>{
+  const reels=[...roll.querySelectorAll(".reel")];
+  reels.forEach(r=>{const b=document.createElement("b");for(let d=0;d<10;d++){const s=document.createElement("span");s.textContent=d;b.appendChild(s);}r.appendChild(b);});
+  function set(n){const s=String(n).padStart(reels.length,"0");reels.forEach((r,i)=>{r.querySelector("b").style.transform="translateY(-"+(+s[i])+"em)";});}
+  set(0);setTimeout(()=>set(247),400);
+  roll.closest(".fx__demo").addEventListener("mouseenter",()=>set(Math.floor(Math.random()*900+100)));
+  if(!REDUCE)setInterval(()=>set(Math.floor(Math.random()*900+100)),2400);
+});
+</script>
+</body>
+</html>

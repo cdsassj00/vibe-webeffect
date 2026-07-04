@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>실험실 · 브라우저의 재발견</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<!-- 브라우저의 재발견 — 웹 애니메이션 사전 : 실험실 편. 전부 라이브러리 없이 canvas/SVG/CSS. 자동 재생. -->
+<style>
+  :root{--ink:#0a0c11;--panel:#141922;--panel2:#1b212c;--hair:#2a313d;--hair2:#39424f;
+    --text:#eef0f3;--muted:#8b93a0;--play:#ff5c49;--read:#ffc24b;--cool:#54c7ff;--v:#a78bfa;}
+  *{box-sizing:border-box}html,body{margin:0}
+  body{background:radial-gradient(120% 80% at 50% -10%,#10151f 0%,var(--ink) 60%) fixed,var(--ink);color:var(--text);
+    font-family:"Pretendard","Noto Sans KR",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;}
+  body::after{content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.038;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+  .sitenav{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:11px 24px;background:#0a0c11cc;backdrop-filter:blur(10px);border-bottom:1px solid var(--hair);font:600 13px/1 ui-monospace,monospace}
+  .sitenav__brand{color:var(--text);margin-right:14px;font-weight:800;letter-spacing:-.01em;text-decoration:none}.sitenav__brand b{color:var(--play)}
+  .sitenav a{color:var(--muted);text-decoration:none;padding:7px 12px;border-radius:8px;transition:.2s}
+  .sitenav a:hover{color:var(--text);background:#ffffff0a}.sitenav a.on{color:#0a0c11;background:var(--play)}
+
+  .top{max-width:1220px;margin:0 auto;padding:42px 24px 4px}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;font:600 12px/1 ui-monospace,monospace;letter-spacing:.24em;text-transform:uppercase;color:var(--play);margin:0 0 16px}
+  .eyebrow::before{content:"";width:22px;height:1px;background:var(--play)}
+  .top h1{margin:0;font-size:clamp(27px,4.4vw,46px);font-weight:800;letter-spacing:-.025em;line-height:1.08}
+  .top h1 em{font-style:normal;background:linear-gradient(90deg,var(--v),var(--cool));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lede{margin:16px 0 0;max-width:62ch;color:var(--muted);font-size:15px}.lede b{color:var(--text);font-weight:600}
+  .note{margin:14px 0 0;font:600 12px/1.4 ui-monospace,monospace;color:var(--muted)}.note span{color:var(--cool)}
+  .rule{max-width:1220px;margin:20px auto 0;padding:0 24px}.rule i{display:block;height:1px;background:linear-gradient(90deg,var(--hair) 0%,transparent 60%)}
+
+  .grid{max-width:1220px;margin:22px auto 44px;padding:0 24px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:580px){.grid{grid-template-columns:1fr}}
+
+  .fx{background:linear-gradient(180deg,#171d27,#131822);border:1px solid var(--hair);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;height:292px;position:relative;box-shadow:0 1px 0 #ffffff0a inset,0 14px 34px -18px #000c}
+  .fx__bar{display:flex;align-items:center;gap:11px;padding:13px 15px;border-bottom:1px solid var(--hair);background:linear-gradient(180deg,var(--panel2),#171c25)}
+  .fx__no{font:800 12px/1 ui-monospace,monospace;color:var(--play);border:1px solid var(--play);border-radius:6px;padding:5px 7px;box-shadow:0 0 12px #ff5c4933}
+  .fx__name{font-size:14px;font-weight:700;letter-spacing:-.01em}
+  .fx__eng{margin-left:auto;font:600 10px/1 ui-monospace,monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;border:1px solid var(--hair);border-radius:20px;padding:5px 10px;white-space:nowrap}
+  .fx__info{margin-left:8px;width:26px;height:26px;flex:none;border-radius:50%;border:1px solid var(--hair2);background:transparent;color:var(--muted);font:800 13px/1 ui-monospace,monospace;cursor:pointer;display:grid;place-items:center;transition:.2s}
+  .fx__info:hover{border-color:var(--play);color:var(--play);box-shadow:0 0 12px #ff5c4933}
+  .fx__demo{flex:1;display:grid;place-items:center;overflow:hidden;position:relative;background:radial-gradient(130% 100% at 50% -12%,#1c2330 0%,#0f141c 74%)}
+  .fx__code{position:absolute;left:13px;bottom:13px;z-index:5;pointer-events:none;font:600 11px/1 ui-monospace,monospace;color:#d3d8df;background:#0a0d12cc;border:1px solid var(--hair);border-radius:7px;padding:6px 9px;max-width:calc(100% - 26px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;backdrop-filter:blur(4px)}
+  .fx__code b{color:var(--cool);font-weight:700}
+
+  .info{position:absolute;inset:0;z-index:8;overflow:auto;padding:15px 16px 18px;background:linear-gradient(180deg,#0f141cf5,#0c1017fb);backdrop-filter:blur(6px);opacity:0;visibility:hidden;transform:translateY(8px);pointer-events:none;transition:.28s cubic-bezier(.2,.7,.2,1)}
+  .fx.open .info{opacity:1;visibility:visible;transform:none;pointer-events:auto}
+  .info__hd{display:flex;align-items:center;gap:8px;margin:0 0 12px}.info__hd h4{margin:0;font-size:15px;font-weight:800;letter-spacing:-.01em}
+  .info__x{margin-left:auto;width:26px;height:26px;flex:none;border-radius:8px;border:1px solid var(--hair2);background:transparent;color:var(--muted);cursor:pointer;font-size:13px;display:grid;place-items:center}
+  .info__x:hover{color:var(--play);border-color:var(--play)}
+  .lbl{font:700 10px/1 ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--play);display:block;margin:14px 0 6px}.lbl:first-of-type{margin-top:0}
+  .info p{margin:0;font-size:12.5px;color:#c8cdd5;line-height:1.55}
+  .info .cmd{margin:6px 0 0;font:600 11.5px/1.5 ui-monospace,monospace;color:#bfe6ff;background:#0a1520;border:1px solid #223243;border-radius:8px;padding:9px 10px;white-space:pre-wrap;word-break:break-word}
+  .info .ask{margin:6px 0 0;font-size:12.5px;color:#e7d6a8;background:#1a160c;border:1px solid #3a3016;border-left:3px solid var(--read);border-radius:8px;padding:9px 11px;line-height:1.55}
+
+  .foot{max-width:1220px;margin:0 auto 66px;padding:0 24px;color:var(--muted);font-size:13px;max-width:84ch}
+  .foot code{background:var(--panel);border:1px solid var(--hair);border-radius:5px;padding:1px 6px;color:var(--text)}.foot .k{color:var(--play);font-weight:700}
+
+  /* ==== 데모 요소 ==== */
+  .cv{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .liqt{font:900 44px ui-monospace,monospace;fill:url(#lg);letter-spacing:2px}
+  .ascii{margin:0;font:700 9px/1.02 ui-monospace,"SF Mono",monospace;color:var(--read);white-space:pre;letter-spacing:.5px;text-shadow:0 0 10px #ffc24b44}
+  .holo{width:150px;height:150px;border-radius:16px;position:relative;overflow:hidden;
+    background:linear-gradient(135deg,#1a2130,#0e1420);box-shadow:0 18px 40px -18px #000e;animation:holotilt 5s ease-in-out infinite}
+  .holo::before{content:"";position:absolute;inset:-2px;background:conic-gradient(from 0deg,#ff5c49,#ffc24b,#5ce1a0,#54c7ff,#a78bfa,#ff5c49);
+    mix-blend-mode:color-dodge;opacity:.5;animation:holospin 5s linear infinite}
+  .holo::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 34%,#ffffffcc 48%,transparent 62%);
+    mix-blend-mode:overlay;animation:holosheen 3.4s ease-in-out infinite}
+  .holo b{position:absolute;inset:0;display:grid;place-items:center;font:800 16px "Pretendard";color:#eaf0ff;letter-spacing:2px;z-index:2}
+  @keyframes holotilt{0%,100%{transform:perspective(600px) rotateX(12deg) rotateY(-17deg)}50%{transform:perspective(600px) rotateX(-12deg) rotateY(17deg)}}
+  @keyframes holospin{to{transform:rotate(360deg)}}
+  @keyframes holosheen{0%,100%{transform:translateX(-45%)}50%{transform:translateX(45%)}}
+  @media(prefers-reduced-motion:reduce){.holo,.holo::before,.holo::after{animation:none!important}}
+</style>
+</head>
+<body>
+
+<nav class="sitenav">
+  <a class="sitenav__brand" href="index.html" style="color:var(--text);padding:0">웹 애니메이션 <b>사전</b></a>
+  <a href="scroll-scrub-lab.html">스크롤</a>
+  <a href="hover-effects-lab.html">호버</a>
+  <a href="signature-effects-lab.html">시그니처</a>
+  <a href="reveal-effects-lab.html">등장·리빌</a>
+  <a href="micro-interactions-lab.html">마이크로</a>
+  <a href="loading-states-lab.html">로딩·상태</a>
+  <a href="insane-effects-lab.html" class="on">실험실</a>
+</nav>
+
+<header class="top">
+  <p class="eyebrow">브라우저의 재발견 · 실험실</p>
+  <h1>이게 <em>브라우저에서 된다고?</em></h1>
+  <p class="lede">설치도, 라이브러리도, 서버도 없다. <b>순수 canvas · SVG 필터 · CSS</b>만으로 어워즈급 실험 효과 9가지. 화면 뒤에서 파티클이 날고, 글자가 물결치고, 3D가 아스키 문자로 그려진다. 카드의 <b>‘?’</b>에 준비물·AI 지시문·핵심 코드가 있다.</p>
+  <p class="note"><span>↻</span> 전부 자동 재생 · 외부 의존성 0 (HTML 파일 하나로 동작)</p>
+</header>
+<div class="rule"><i></i></div>
+
+<main class="grid">
+
+  <!-- 01 구이 메탈볼 -->
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">01</span><span class="fx__name">구이 메탈볼</span><span class="fx__eng">gooey · SVG filter</span><button class="fx__info">?</button></div>
+    <div class="fx__demo">
+      <svg class="cv" data-fx="metaballs" viewBox="0 0 300 180" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff5c49"/><stop offset=".5" stop-color="#a78bfa"/><stop offset="1" stop-color="#54c7ff"/></linearGradient>
+          <filter id="goo"><feGaussianBlur in="SourceGraphic" stdDeviation="9" result="b"/><feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10"/></filter>
+        </defs>
+        <g filter="url(#goo)" fill="url(#gg)">
+          <circle class="mb" r="27" cx="90" cy="90"/><circle class="mb" r="23" cx="150" cy="80"/>
+          <circle class="mb" r="29" cx="210" cy="100"/><circle class="mb" r="20" cx="150" cy="120"/>
+          <circle class="mb" r="24" cx="120" cy="60"/>
+        </g>
+      </svg>
+      <div class="fx__code"><b>feGaussianBlur</b> + feColorMatrix(알파 임계)</div>
+    </div>
+    <div class="info"><div class="info__hd"><h4>구이 메탈볼 (액체 융합)</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>원 여러 개 + <b>SVG 필터 하나</b>. 블러로 뭉갠 뒤 알파값을 급격히 대비시키면(feColorMatrix) 가까운 원끼리 수은처럼 <b>들러붙었다 떨어진다</b>. JS는 원 위치만 움직이면 끝.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“SVG goo 필터(feGaussianBlur+feColorMatrix)로 원들이 액체처럼 뭉쳤다 갈라지는 메탈볼 효과 만들어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">&lt;feColorMatrix values="… 0 0 0 22 -10"/&gt;
+circle.setAttribute("cx", x);  // JS로 이동</div></div>
+  </section>
+
+  <!-- 02 파티클 성좌 -->
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">02</span><span class="fx__name">파티클 성좌</span><span class="fx__eng">constellation</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><canvas class="cv" data-fx="constellation"></canvas>
+      <div class="fx__code"><b>거리 &lt; 임계값</b> → 선으로 연결</div></div>
+    <div class="info"><div class="info__hd"><h4>파티클 성좌</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>떠다니는 점 수십 개 + <b>canvas</b>. 두 점 사이 거리가 가까우면 선을 긋고, 멀면 안 긋는다. 그게 전부인데 살아있는 별자리처럼 보인다. 히어로 배경 단골.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“캔버스에 점들이 떠다니고 가까운 점끼리 선으로 이어지는 파티클 네트워크 배경 만들어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">if (dist(a,b) < 64) {
+  ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
+}</div></div>
+  </section>
+
+  <!-- 03 매트릭스 레인 -->
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">03</span><span class="fx__name">매트릭스 레인</span><span class="fx__eng">digital rain</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><canvas class="cv" data-fx="matrix"></canvas>
+      <div class="fx__code"><b>열마다</b> 글자가 낙하 + 잔상</div></div>
+    <div class="info"><div class="info__hd"><h4>매트릭스 디지털 레인</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p><b>canvas</b> + 열(column) 배열. 매 프레임 반투명 검정으로 살짝 덮어 <b>잔상(트레일)</b>을 만들고, 각 열에서 랜덤 글자를 아래로 떨군다. 영화 그대로.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“매트릭스 영화처럼 초록 글자가 세로로 떨어지는 디지털 레인 캔버스 배경 만들어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">ctx.fillStyle="rgba(10,12,17,.18)"; // 잔상
+ctx.fillRect(0,0,w,h);
+ctx.fillText(glyph, col*15, y);</div></div>
+  </section>
+
+  <!-- 04 플로우 필드 -->
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">04</span><span class="fx__name">플로우 필드</span><span class="fx__eng">flow field</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><canvas class="cv" data-fx="flow"></canvas>
+      <div class="fx__code"><b>각도</b> = noise(x, y, t)</div></div>
+    <div class="info"><div class="info__hd"><h4>플로우 필드 (흐름장)</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>파티클이 <b>보이지 않는 방향장</b>을 따라 흐른다. 각 위치의 이동 각도를 sin·cos 조합으로 정하면 강물 같은 궤적이 생긴다. 제너러티브 아트의 기본기.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“파티클이 노이즈 기반 흐름장을 따라 강물처럼 흐르는 플로우 필드 애니메이션 만들어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">const a = (sin(x*0.01+t)+cos(y*0.012-t)) * PI;
+p.x += cos(a)*1.4; p.y += sin(a)*1.4;</div></div>
+  </section>
+
+  <!-- 05 리퀴드 텍스트 -->
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">05</span><span class="fx__name">리퀴드 텍스트</span><span class="fx__eng">displacement</span><button class="fx__info">?</button></div>
+    <div class="fx__demo">
+      <svg class="cv" data-fx="liquid" viewBox="0 0 300 180" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="lg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#54c7ff"/><stop offset="1" stop-color="#a78bfa"/></linearGradient>
+          <filter id="liq" x="-20%" y="-40%" width="140%" height="180%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.012 0.02" numOctaves="2" seed="4" result="t">
+              <animate attributeName="baseFrequency" dur="14s" values="0.010 0.018;0.020 0.032;0.010 0.018" repeatCount="indefinite"/>
+            </feTurbulence>
+            <feDisplacementMap in="SourceGraphic" in2="t" scale="18"/>
+          </filter>
+        </defs>
+        <text x="150" y="104" text-anchor="middle" class="liqt" filter="url(#liq)">LIQUID</text>
+      </svg>
+      <div class="fx__code"><b>feTurbulence</b> + feDisplacementMap</div>
+    </div>
+    <div class="info"><div class="info__hd"><h4>리퀴드 텍스트 왜곡</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p><b>SVG 필터 2개</b>만. 노이즈(feTurbulence)를 만들고 그걸로 글자 픽셀을 밀어내면(feDisplacementMap) 텍스트가 물처럼 일렁인다. 노이즈 주파수를 <b>SMIL</b>로 애니메이션 — JS 0줄.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“SVG feTurbulence와 feDisplacementMap으로 글자가 물처럼 일렁이는 왜곡 효과 만들어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">&lt;feTurbulence baseFrequency="0.012 0.02"/&gt;
+&lt;feDisplacementMap in2="t" scale="18"/&gt;</div></div>
+  </section>
+
+  <!-- 06 ASCII 렌더러 -->
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">06</span><span class="fx__name">ASCII 3D 렌더러</span><span class="fx__eng">ascii donut</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><pre class="ascii" data-fx="ascii"></pre>
+      <div class="fx__code"><b>3D 회전</b> → 밝기 → 문자 매핑</div></div>
+    <div class="info"><div class="info__hd"><h4>ASCII 3D 렌더러 (도넛)</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>이미지가 아니다. <b>회전하는 3D 도넛</b>을 매 프레임 계산해 각 점의 밝기를 <code>.,-~:;=!*#$@</code> 문자로 바꿔 <b>&lt;pre&gt;</b>에 찍는다. 그래픽 카드도, 이미지 파일도 없이 텍스트만으로.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“회전하는 3D 도넛을 아스키 문자로 렌더링하는 그 유명한 도넛 코드 만들어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">const L = 밝기(법선·광원);
+buf[o] = ".,-~:;=!*#$@"[L>0 ? L : 0];</div></div>
+  </section>
+
+  <!-- 07 크로매틱 글리치 -->
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">07</span><span class="fx__name">크로매틱 글리치</span><span class="fx__eng">RGB split</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><canvas class="cv" data-fx="glitch"></canvas>
+      <div class="fx__code"><b>R·G·B 채널</b> 어긋내기 + 슬라이스</div></div>
+    <div class="info"><div class="info__hd"><h4>크로매틱 글리치 (RGB 분리)</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>같은 글자를 <b>빨강·파랑·흰색</b>으로 살짝 어긋나게 겹쳐 찍고(합성모드 lighter), 가로 띠 몇 개를 랜덤하게 밀면 신호 깨진 화면이 된다. 스캔라인은 덤.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“RGB 채널이 어긋나고 가로줄이 지직거리는 글리치/신호 오류 텍스트 효과 만들어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">ctx.globalCompositeOperation="lighter";
+ctx.fillStyle="#ff2d55"; fillText(t, x+jx(), y);
+ctx.fillStyle="#00e5ff"; fillText(t, x+jx(), y);</div></div>
+  </section>
+
+  <!-- 08 홀로그래픽 포일 -->
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">08</span><span class="fx__name">홀로그래픽 포일</span><span class="fx__eng">holographic · CSS</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><div class="holo"><b>HOLO</b></div>
+      <div class="fx__code"><b>conic-gradient</b> + mix-blend-mode</div></div>
+    <div class="info"><div class="info__hd"><h4>홀로그래픽 포일 카드</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p><b>순수 CSS.</b> 무지개 conic-gradient를 <b>mix-blend-mode: color-dodge</b>로 얹고, 그 위에 흰 빛줄기(sheen)를 지나가게 한다. 카드가 살짝 기울며 도는 건 keyframes 한 줄. 포켓몬 반짝이 카드 느낌.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“무지개빛이 흐르고 빛줄기가 지나가는 홀로그램 포일 카드를 CSS만으로 만들어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">background: conic-gradient(from 0deg,#ff5c49,#54c7ff,#a78bfa…);
+mix-blend-mode: color-dodge;</div></div>
+  </section>
+
+  <!-- 09 무한 터널 -->
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">09</span><span class="fx__name">무한 터널 웜홀</span><span class="fx__eng">infinite tunnel</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><canvas class="cv" data-fx="tunnel"></canvas>
+      <div class="fx__code"><b>동심 링</b> 확대·회전 flythrough</div></div>
+    <div class="info"><div class="info__hd"><h4>무한 터널 (웜홀)</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>중심에서 <b>동심 다각형</b>을 계속 그리되, 매 프레임 조금씩 키우고 돌린다. 바깥으로 밀려나며 재활용되면 <b>끝없이 빨려드는</b> 터널이 된다. 색은 hue를 순환.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“중심으로 끝없이 빨려드는 회전하는 무한 터널/웜홀을 캔버스로 만들어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">const s = ((i+phase)/R);     // 0→1 바깥으로
+const rad = pow(s,1.7) * maxDim;
+ctx.rotate(t + i*0.18);      // 나선 회전</div></div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <p><span class="k">9가지 실험 효과 —</span> ⑤는 SVG 필터+SMIL로 <b>JS 0줄</b>, ⑧은 순수 CSS, 나머지는 <code>&lt;canvas&gt;</code> 반복 루프 몇 줄이다. 라이브러리·설치·서버 전부 없이 HTML 파일 하나로 돈다. 이게 "브라우저의 재발견".</p>
+</footer>
+
+<script>
+"use strict";
+const REDUCE=matchMedia("(prefers-reduced-motion:reduce)").matches;
+
+/* 카드 등장 + '?' 토글 */
+document.querySelectorAll(".fx").forEach((p,i)=>{
+  if(!REDUCE)p.animate([{opacity:0,transform:"translateY(18px)"},{opacity:1,transform:"none"}],{duration:640,delay:i*60,easing:"cubic-bezier(.2,.7,.2,1)",fill:"backwards"});
+  const b=p.querySelector(".fx__info"),x=p.querySelector(".info__x");
+  if(b)b.addEventListener("click",()=>p.classList.toggle("open"));
+  if(x)x.addEventListener("click",()=>p.classList.remove("open"));
+});
+
+/* 캔버스 DPR 맞춤 */
+function fit(cv){const dpr=Math.min(2,devicePixelRatio||1),r=cv.getBoundingClientRect();
+  cv.width=Math.max(1,Math.round(r.width*dpr));cv.height=Math.max(1,Math.round(r.height*dpr));
+  const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);return {ctx,w:r.width,h:r.height};}
+
+const FX={};
+
+/* 01 메탈볼 (SVG 원 이동) */
+FX.metaballs=function(svg){const cs=[...svg.querySelectorAll(".mb")];let T=0;
+  (function loop(){T+=0.02;cs.forEach((c,i)=>{
+    const cx=150+Math.cos(T*(0.7+i*0.13)+i)*(46+i*6);
+    const cy=90+Math.sin(T*(0.9+i*0.11)+i*1.3)*(30+i*4);
+    c.setAttribute("cx",cx.toFixed(1));c.setAttribute("cy",cy.toFixed(1));});
+    if(!REDUCE)requestAnimationFrame(loop);})();};
+
+/* 02 파티클 성좌 */
+FX.constellation=function(cv){let ctx,w,h;const N=44,P=[];
+  function size(){const o=fit(cv);ctx=o.ctx;w=o.w;h=o.h;}size();addEventListener("resize",size);
+  for(let i=0;i<N;i++)P.push({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-.5)*.5,vy:(Math.random()-.5)*.5});
+  let T=0;
+  (function loop(){T+=0.01;ctx.clearRect(0,0,w,h);
+    const ax=w*(0.5+0.4*Math.cos(T)),ay=h*(0.5+0.4*Math.sin(T*1.3));
+    for(const p of P){const dx=ax-p.x,dy=ay-p.y,d=Math.hypot(dx,dy)||1;if(d<95){p.vx+=dx/d*0.02;p.vy+=dy/d*0.02;}
+      p.vx*=0.99;p.vy*=0.99;p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0||p.x>w)p.vx*=-1;if(p.y<0||p.y>h)p.vy*=-1;p.x=Math.max(0,Math.min(w,p.x));p.y=Math.max(0,Math.min(h,p.y));}
+    for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){const a=P[i],b=P[j],d=Math.hypot(a.x-b.x,a.y-b.y);
+      if(d<64){ctx.strokeStyle="rgba(84,199,255,"+(1-d/64)*0.5+")";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}}
+    for(const p of P){ctx.fillStyle="#cfe8ff";ctx.beginPath();ctx.arc(p.x,p.y,1.8,0,6.29);ctx.fill();}
+    if(!REDUCE)requestAnimationFrame(loop);})();};
+
+/* 03 매트릭스 레인 */
+FX.matrix=function(cv){let ctx,w,h,cols,ys;const F=15;
+  function size(){const o=fit(cv);ctx=o.ctx;w=o.w;h=o.h;cols=Math.max(1,Math.floor(w/F));ys=Array.from({length:cols},()=>Math.random()*h/F|0);}
+  size();addEventListener("resize",size);
+  const g="アイウエオカキクケコサシスセソabcdef0123456789ンヲﾊﾋ";
+  (function loop(){ctx.fillStyle="rgba(10,12,17,0.18)";ctx.fillRect(0,0,w,h);ctx.font="700 "+F+"px ui-monospace,monospace";
+    for(let i=0;i<cols;i++){const ch=g[Math.random()*g.length|0],x=i*F,y=ys[i]*F;
+      ctx.fillStyle=Math.random()<0.06?"#eafff2":"#37e08a";ctx.fillText(ch,x,y);
+      if(y>h&&Math.random()>0.975)ys[i]=0;else ys[i]++;}
+    if(!REDUCE)requestAnimationFrame(loop);})();};
+
+/* 04 플로우 필드 */
+FX.flow=function(cv){let ctx,w,h;const N=150,P=[];
+  function size(){const o=fit(cv);ctx=o.ctx;w=o.w;h=o.h;}size();addEventListener("resize",size);
+  for(let i=0;i<N;i++)P.push({x:Math.random()*w,y:Math.random()*h,c:i});
+  let T=0;
+  (function loop(){T+=0.006;ctx.fillStyle="rgba(10,12,17,0.08)";ctx.fillRect(0,0,w,h);
+    for(const p of P){const a=(Math.sin(p.x*0.01+T)+Math.cos(p.y*0.012-T))*Math.PI;
+      p.x+=Math.cos(a)*1.4;p.y+=Math.sin(a)*1.4;
+      if(p.x<0||p.x>w||p.y<0||p.y>h){p.x=Math.random()*w;p.y=Math.random()*h;}
+      ctx.fillStyle="hsl("+((p.c*2+T*30)%360)+",80%,62%)";ctx.fillRect(p.x,p.y,1.6,1.6);}
+    if(!REDUCE)requestAnimationFrame(loop);})();};
+
+/* 05 리퀴드 텍스트 — SMIL(무JS), 초기화 불필요 */
+FX.liquid=function(){};
+
+/* 06 ASCII 도넛 */
+FX.ascii=function(pre){let A=0,B=0;const cols=42,rows=20,chars=".,-~:;=!*#$@";
+  (function loop(){A+=0.05;B+=0.03;const b=new Array(cols*rows).fill(" "),z=new Array(cols*rows).fill(0);
+    const sA=Math.sin(A),cA=Math.cos(A),sB=Math.sin(B),cB=Math.cos(B);
+    for(let j=0;j<6.28;j+=0.10){const cj=Math.cos(j),sj=Math.sin(j),h=cj+2;
+      for(let i=0;i<6.28;i+=0.03){const si=Math.sin(i),ci=Math.cos(i),
+        D=1/(si*h*sA+sj*cA+5),t=si*h*cA-sj*sA,
+        x=Math.floor(cols/2+cols*0.30*D*(ci*h*cB-t*sB)),
+        y=Math.floor(rows/2+rows*0.48*D*(ci*h*sB+t*cB)),o=x+cols*y,
+        L=Math.floor(8*((sj*sA-si*cj*cA)*cB-si*cj*sA-sj*cA-ci*cj*sB));
+        if(y>=0&&y<rows&&x>=0&&x<cols&&D>z[o]){z[o]=D;b[o]=chars[L>0?(L<11?L:11):0];}}}
+    let s="";for(let k=0;k<rows;k++)s+=b.slice(k*cols,k*cols+cols).join("")+"\n";pre.textContent=s;
+    if(!REDUCE)requestAnimationFrame(loop);})();};
+
+/* 07 크로매틱 글리치 */
+FX.glitch=function(cv){let ctx,w,h;
+  function size(){const o=fit(cv);ctx=o.ctx;w=o.w;h=o.h;}size();addEventListener("resize",size);
+  (function loop(){ctx.fillStyle="#0d1017";ctx.fillRect(0,0,w,h);
+    const cx=w/2,cy=h/2,fs=Math.min(46,w*0.17);ctx.textAlign="center";ctx.textBaseline="middle";ctx.font="900 "+fs+"px ui-monospace,monospace";
+    const jx=()=>(Math.random()-.5)*9;
+    ctx.globalCompositeOperation="lighter";
+    ctx.fillStyle="#ff2d55";ctx.fillText("GLITCH",cx+jx(),cy);
+    ctx.fillStyle="#00e5ff";ctx.fillText("GLITCH",cx+jx(),cy);
+    ctx.fillStyle="#eef0f3";ctx.fillText("GLITCH",cx+jx()*0.3,cy);
+    ctx.globalCompositeOperation="source-over";
+    for(let n=0;n<3;n++){const by=Math.random()*h,bh=3+Math.random()*11;ctx.save();ctx.beginPath();ctx.rect(0,by,w,bh);ctx.clip();
+      ctx.fillStyle="#eef0f3";ctx.fillText("GLITCH",cx+(Math.random()-.5)*30,cy);ctx.restore();}
+    ctx.fillStyle="rgba(0,0,0,0.22)";for(let y=0;y<h;y+=3)ctx.fillRect(0,y,w,1);
+    if(!REDUCE)requestAnimationFrame(loop);})();};
+
+/* 09 무한 터널 */
+FX.tunnel=function(cv){let ctx,w,h;
+  function size(){const o=fit(cv);ctx=o.ctx;w=o.w;h=o.h;}size();addEventListener("resize",size);
+  const R=24,sides=6;let T=0;
+  (function loop(){T+=0.02;ctx.fillStyle="#0a0c11";ctx.fillRect(0,0,w,h);
+    const md=Math.max(w,h)*0.82,phase=(T*0.5)%1;ctx.save();ctx.translate(w/2,h/2);
+    for(let i=R;i>0;i--){const s=(i+phase)/R,rad=Math.pow(s,1.7)*md;
+      ctx.strokeStyle="hsl("+((i*14+T*60)%360)+",78%,"+(28+s*34)+"%)";ctx.lineWidth=1.2+(1-s)*3;
+      ctx.save();ctx.rotate(T*1.1+i*0.18);ctx.beginPath();
+      for(let k=0;k<=sides;k++){const ang=k/sides*6.283,px=Math.cos(ang)*rad,py=Math.sin(ang)*rad;k?ctx.lineTo(px,py):ctx.moveTo(px,py);}
+      ctx.stroke();ctx.restore();}
+    ctx.restore();if(!REDUCE)requestAnimationFrame(loop);})();};
+
+document.querySelectorAll("[data-fx]").forEach(el=>{const f=FX[el.dataset.fx];if(f)f(el);});
+</script>
+</body>
+</html>

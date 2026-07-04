@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>마이크로 인터랙션 · 브라우저의 재발견</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<!-- 웹 애니메이션 사전 : 마이크로 인터랙션 편. 버튼·폼·피드백의 작은 움직임. 자동 재생. -->
+<style>
+  :root{--ink:#0a0c11;--panel:#141922;--panel2:#1b212c;--hair:#2a313d;--hair2:#39424f;
+    --text:#eef0f3;--muted:#8b93a0;--play:#ff5c49;--read:#ffc24b;--cool:#54c7ff;--v:#a78bfa;}
+  *{box-sizing:border-box}html,body{margin:0}
+  body{background:radial-gradient(120% 80% at 50% -10%,#10151f 0%,var(--ink) 60%) fixed,var(--ink);color:var(--text);
+    font-family:"Pretendard","Noto Sans KR",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;}
+  body::after{content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.038;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+  .sitenav{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:11px 24px;background:#0a0c11cc;backdrop-filter:blur(10px);border-bottom:1px solid var(--hair);font:600 13px/1 ui-monospace,monospace}
+  .sitenav__brand{color:var(--text);margin-right:14px;font-weight:800;letter-spacing:-.01em;text-decoration:none;padding:0}.sitenav__brand b{color:var(--play)}
+  .sitenav a{color:var(--muted);text-decoration:none;padding:7px 12px;border-radius:8px;transition:.2s}
+  .sitenav a:hover{color:var(--text);background:#ffffff0a}.sitenav a.on{color:#0a0c11;background:var(--play)}
+
+  .top{max-width:1220px;margin:0 auto;padding:42px 24px 4px}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;font:600 12px/1 ui-monospace,monospace;letter-spacing:.24em;text-transform:uppercase;color:var(--play);margin:0 0 16px}
+  .eyebrow::before{content:"";width:22px;height:1px;background:var(--play)}
+  .top h1{margin:0;font-size:clamp(27px,4.4vw,46px);font-weight:800;letter-spacing:-.025em;line-height:1.08}
+  .top h1 em{font-style:normal;background:linear-gradient(90deg,var(--v),var(--cool));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lede{margin:16px 0 0;max-width:62ch;color:var(--muted);font-size:15px}.lede b{color:var(--text);font-weight:600}
+  .note{margin:14px 0 0;font:600 12px/1.4 ui-monospace,monospace;color:var(--muted)}.note span{color:var(--cool)}
+  .rule{max-width:1220px;margin:20px auto 0;padding:0 24px}.rule i{display:block;height:1px;background:linear-gradient(90deg,var(--hair) 0%,transparent 60%)}
+
+  .grid{max-width:1220px;margin:22px auto 44px;padding:0 24px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:580px){.grid{grid-template-columns:1fr}}
+
+  .fx{background:linear-gradient(180deg,#171d27,#131822);border:1px solid var(--hair);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;height:292px;position:relative;box-shadow:0 1px 0 #ffffff0a inset,0 14px 34px -18px #000c}
+  .fx__bar{display:flex;align-items:center;gap:11px;padding:13px 15px;border-bottom:1px solid var(--hair);background:linear-gradient(180deg,var(--panel2),#171c25)}
+  .fx__no{font:800 12px/1 ui-monospace,monospace;color:var(--play);border:1px solid var(--play);border-radius:6px;padding:5px 7px;box-shadow:0 0 12px #ff5c4933}
+  .fx__name{font-size:14px;font-weight:700;letter-spacing:-.01em}
+  .fx__eng{margin-left:auto;font:600 10px/1 ui-monospace,monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;border:1px solid var(--hair);border-radius:20px;padding:5px 10px;white-space:nowrap}
+  .fx__info{margin-left:8px;width:26px;height:26px;flex:none;border-radius:50%;border:1px solid var(--hair2);background:transparent;color:var(--muted);font:800 13px/1 ui-monospace,monospace;cursor:pointer;display:grid;place-items:center;transition:.2s}
+  .fx__info:hover{border-color:var(--play);color:var(--play);box-shadow:0 0 12px #ff5c4933}
+  .fx__demo{flex:1;display:grid;place-items:center;overflow:hidden;position:relative;background:radial-gradient(130% 100% at 50% -12%,#1c2330 0%,#10151d 74%)}
+  .fx__code{position:absolute;left:13px;bottom:13px;z-index:5;pointer-events:none;font:600 11px/1 ui-monospace,monospace;color:#d3d8df;background:#0a0d12cc;border:1px solid var(--hair);border-radius:7px;padding:6px 9px;max-width:calc(100% - 26px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;backdrop-filter:blur(4px)}
+  .fx__code b{color:var(--cool);font-weight:700}
+
+  .info{position:absolute;inset:0;z-index:8;overflow:auto;padding:15px 16px 18px;background:linear-gradient(180deg,#0f141cf5,#0c1017fb);backdrop-filter:blur(6px);opacity:0;visibility:hidden;transform:translateY(8px);pointer-events:none;transition:.28s cubic-bezier(.2,.7,.2,1)}
+  .fx.open .info{opacity:1;visibility:visible;transform:none;pointer-events:auto}
+  .info__hd{display:flex;align-items:center;gap:8px;margin:0 0 12px}.info__hd h4{margin:0;font-size:15px;font-weight:800;letter-spacing:-.01em}
+  .info__x{margin-left:auto;width:26px;height:26px;flex:none;border-radius:8px;border:1px solid var(--hair2);background:transparent;color:var(--muted);cursor:pointer;font-size:13px;display:grid;place-items:center}
+  .info__x:hover{color:var(--play);border-color:var(--play)}
+  .lbl{font:700 10px/1 ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--play);display:block;margin:14px 0 6px}.lbl:first-of-type{margin-top:0}
+  .info p{margin:0;font-size:12.5px;color:#c8cdd5;line-height:1.55}
+  .info .cmd{margin:6px 0 0;font:600 11.5px/1.5 ui-monospace,monospace;color:#bfe6ff;background:#0a1520;border:1px solid #223243;border-radius:8px;padding:9px 10px;white-space:pre-wrap;word-break:break-word}
+  .info .ask{margin:6px 0 0;font-size:12.5px;color:#e7d6a8;background:#1a160c;border:1px solid #3a3016;border-left:3px solid var(--read);border-radius:8px;padding:9px 11px;line-height:1.55}
+
+  .foot{max-width:1220px;margin:0 auto 66px;padding:0 24px;color:var(--muted);font-size:13px;max-width:84ch}
+  .foot code{background:var(--panel);border:1px solid var(--hair);border-radius:5px;padding:1px 6px;color:var(--text)}.foot .k{color:var(--play);font-weight:700}
+
+  /* ==== 데모 ==== */
+  .spring{transition:transform .5s cubic-bezier(.34,1.56,.64,1)} /* 오버슈트 스프링 */
+  /* 01 토글 */
+  .tgl{width:84px;height:44px;border-radius:30px;background:#2a313d;position:relative;cursor:pointer;transition:background .35s}
+  .tgl i{position:absolute;top:4px;left:4px;width:36px;height:36px;border-radius:50%;background:#fff;box-shadow:0 3px 8px #0008;transition:transform .5s cubic-bezier(.34,1.56,.64,1)}
+  .tgl.onn{background:var(--cool)}.tgl.onn i{transform:translateX(40px)}
+  /* 02 하트 버스트 */
+  .heart{position:relative;width:64px;height:64px;display:grid;place-items:center;cursor:pointer}
+  .heart svg{width:46px;height:46px;fill:#39424f;transition:fill .2s,transform .5s cubic-bezier(.34,1.56,.64,1)}
+  .heart.onn svg{fill:#ff2d55;transform:scale(1.22)}
+  .heart .pp{position:absolute;left:50%;top:50%;width:6px;height:6px;border-radius:50%;opacity:0;pointer-events:none}
+  .heart.onn .pp{animation:pburst .65s ease-out forwards}
+  @keyframes pburst{0%{opacity:1;transform:translate(-50%,-50%)}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.4)}}
+  /* 03 리플 */
+  .rip{position:relative;overflow:hidden;width:170px;height:52px;border:none;border-radius:12px;background:linear-gradient(150deg,#4b7de0,#54c7ff);
+    color:#04121f;font:700 15px "Pretendard";cursor:pointer}
+  .rip i{position:absolute;border-radius:50%;background:#ffffff88;transform:translate(-50%,-50%) scale(0);pointer-events:none}
+  .rip i.go{animation:ripgo .6s ease-out forwards}
+  @keyframes ripgo{to{transform:translate(-50%,-50%) scale(1);opacity:0}}
+  /* 04 플로팅 라벨 */
+  .fld{position:relative;width:190px}
+  .fld input{width:100%;padding:15px 13px 7px;border-radius:11px;border:1.5px solid var(--hair2);background:#10151d;color:var(--text);font:600 14px "Pretendard";outline:none;transition:border-color .25s}
+  .fld label{position:absolute;left:13px;top:12px;color:var(--muted);font:600 13px "Pretendard";pointer-events:none;transition:.25s cubic-bezier(.2,.7,.2,1);transform-origin:left}
+  .fld.onn input{border-color:var(--cool)}
+  .fld.onn label{transform:translateY(-8px) scale(.72);color:var(--cool)}
+  /* 05 별점 */
+  .stars{display:flex;gap:5px}
+  .stars svg{width:31px;height:31px;fill:#39424f;transition:fill .18s,transform .4s cubic-bezier(.34,1.56,.64,1)}
+  .stars svg.onn{fill:var(--read);transform:scale(1.18) rotate(-8deg)}
+  /* 06 체크박스 드로우 */
+  .chk{width:56px;height:56px;border-radius:15px;border:2.5px solid var(--hair2);display:grid;place-items:center;cursor:pointer;transition:border-color .3s,background .3s}
+  .chk svg{width:32px;height:32px;fill:none;stroke:#fff;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:26;stroke-dashoffset:26;transition:stroke-dashoffset .38s ease .08s}
+  .chk.onn{background:var(--cool);border-color:var(--cool)}
+  .chk.onn svg{stroke-dashoffset:0}.chk.onn{animation:chkpop .4s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes chkpop{0%{transform:scale(.86)}100%{transform:scale(1)}}
+  /* 07 스프링 버튼 */
+  .sq{border:none;border-radius:13px;padding:16px 26px;background:linear-gradient(150deg,#a78bfa,#7d5fd8);color:#0d0718;font:800 15px "Pretendard";cursor:pointer}
+  .sq.onn{animation:squish .5s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes squish{0%{transform:scale(1)}35%{transform:scale(.9,.82)}70%{transform:scale(1.06,1.1)}100%{transform:scale(1)}}
+  /* 08 벨 */
+  .bell{position:relative;width:64px;height:64px;display:grid;place-items:center}
+  .bell svg{width:42px;height:42px;fill:#c8cdd5;transform-origin:top center}
+  .bell.onn svg{animation:ring .9s cubic-bezier(.36,.07,.19,.97)}
+  @keyframes ring{0%{transform:rotate(0)}15%{transform:rotate(22deg)}30%{transform:rotate(-18deg)}45%{transform:rotate(12deg)}60%{transform:rotate(-8deg)}75%{transform:rotate(4deg)}100%{transform:rotate(0)}}
+  .bell b{position:absolute;top:8px;right:8px;min-width:21px;height:21px;border-radius:20px;background:var(--play);color:#fff;font:800 11px/21px ui-monospace,monospace;text-align:center;transform:scale(0)}
+  .bell.onn b{animation:badgepop .45s cubic-bezier(.34,1.56,.64,1) .25s forwards}
+  @keyframes badgepop{to{transform:scale(1)}}
+  /* 09 카피 버튼 */
+  .cpy{display:inline-flex;align-items:center;gap:9px;border:1.5px solid var(--hair2);border-radius:11px;background:#141a24;color:var(--text);
+    padding:13px 18px;font:700 14px "Pretendard";cursor:pointer;transition:border-color .3s,color .3s}
+  .cpy.onn{border-color:#5ce1a0;color:#5ce1a0}
+  .cpy .ic{width:17px;height:17px;position:relative}
+  .cpy .ic svg{position:absolute;inset:0;width:100%;height:100%;transition:opacity .25s,transform .35s cubic-bezier(.34,1.56,.64,1)}
+  .cpy .ic .c2{opacity:0;transform:scale(.5)}
+  .cpy.onn .ic .c1{opacity:0;transform:scale(.5)}.cpy.onn .ic .c2{opacity:1;transform:scale(1)}
+
+  @media(prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+
+<nav class="sitenav">
+  <a class="sitenav__brand" href="index.html">웹 애니메이션 <b>사전</b></a>
+  <a href="scroll-scrub-lab.html">스크롤</a>
+  <a href="hover-effects-lab.html">호버</a>
+  <a href="signature-effects-lab.html">시그니처</a>
+  <a href="reveal-effects-lab.html">등장·리빌</a>
+  <a href="micro-interactions-lab.html" class="on">마이크로</a>
+  <a href="loading-states-lab.html">로딩·상태</a>
+  <a href="insane-effects-lab.html">실험실</a>
+</nav>
+
+<header class="top">
+  <p class="eyebrow">브라우저의 재발견 · 마이크로 인터랙션</p>
+  <h1>클릭 한 번에 담긴 <em>0.5초의 디테일</em></h1>
+  <p class="lede">버튼·폼·알림이 손끝에 반응하는 작은 움직임 9가지. 앱이 ‘살아있다’고 느끼게 하는 건 큰 연출이 아니라 이 <b>마이크로 인터랙션</b>이다. 공통 비밀은 <b>오버슈트 스프링 곡선</b> <code>cubic-bezier(.34,1.56,.64,1)</code> — 목표를 살짝 지나쳤다 돌아온다.</p>
+  <p class="note"><span>↻</span> 자동 재생 + 직접 클릭해도 반응합니다.</p>
+</header>
+<div class="rule"><i></i></div>
+
+<main class="grid">
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">01</span><span class="fx__name">스프링 토글</span><span class="fx__eng">toggle switch</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><div class="tgl" data-tgl><i></i></div><div class="fx__code"><b>cubic-bezier(.34,1.56,.64,1)</b> 오버슈트</div></div>
+    <div class="info"><div class="info__hd"><h4>스프링 토글 스위치</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>노브가 <b>살짝 지나쳤다 돌아오는</b> 스프링 이징이 핵심. 밋밋한 ease와 손맛 차이가 크다. 상태 색 전환도 함께.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“iOS처럼 통통 튀는 스프링 느낌의 토글 스위치 만들어줘. 오버슈트 이징으로.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">transition:transform .5s cubic-bezier(.34,1.56,.64,1);
+.on i{transform:translateX(40px)}</div></div>
+  </section>
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">02</span><span class="fx__name">좋아요 버스트</span><span class="fx__eng">like burst</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><div class="heart" data-heart>
+      <svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.9-10-9.2C.4 8.6 2 5 5.5 5c2 0 3.4 1.1 4.2 2.4L12 10l2.3-2.6C15.1 6.1 16.5 5 18.5 5 22 5 23.6 8.6 22 11.8 19.5 16.1 12 21 12 21z"/></svg>
+      <i class="pp" style="--dx:-34px;--dy:-30px;background:#ff2d55"></i><i class="pp" style="--dx:34px;--dy:-26px;background:#ffc24b"></i>
+      <i class="pp" style="--dx:-28px;--dy:26px;background:#54c7ff"></i><i class="pp" style="--dx:30px;--dy:30px;background:#a78bfa"></i>
+      <i class="pp" style="--dx:0px;--dy:-40px;background:#5ce1a0"></i><i class="pp" style="--dx:-42px;--dy:0px;background:#ff5c49"></i>
+      <i class="pp" style="--dx:42px;--dy:4px;background:#ff2d55"></i></div>
+      <div class="fx__code"><b>파티클 6~8개</b> 방사 + 하트 스케일 팝</div></div>
+    <div class="info"><div class="info__hd"><h4>좋아요 파티클 버스트</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>하트가 스프링으로 팽창하며 <b>색 점 6~8개가 사방으로 튄다</b>. 점마다 CSS 변수(--dx,--dy)로 방향만 다르게 주면 keyframes 하나로 끝.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“트위터 좋아요처럼 하트 누르면 색 파티클이 사방으로 터지는 버스트 효과 만들어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">.p{--dx:34px;--dy:-26px;animation:burst .65s forwards}
+@keyframes burst{to{transform:
+  translate(var(--dx),var(--dy)) scale(.4);opacity:0}}</div></div>
+  </section>
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">03</span><span class="fx__name">리플 (물결)</span><span class="fx__eng">ripple</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><button class="rip" data-rip>클릭해 보세요</button>
+      <div class="fx__code"><b>클릭 좌표</b>에 원 생성 → scale 확산</div></div>
+    <div class="info"><div class="info__hd"><h4>머티리얼 리플</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p><b>클릭한 지점</b>에 반투명 원을 만들어 커지며 사라지게 한다. 구글 머티리얼 디자인의 시그니처. 좌표는 <code>e.offsetX/Y</code>.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“버튼 클릭한 위치에서 물결이 퍼지는 머티리얼 리플 효과 넣어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">const i=document.createElement("i");
+i.style.left=e.offsetX+"px";i.style.top=e.offsetY+"px";
+btn.appendChild(i); // scale(0)→scale(1)+fade</div></div>
+  </section>
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">04</span><span class="fx__name">플로팅 라벨</span><span class="fx__eng">floating label</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><div class="fld" data-fld><input type="text" readonly><label>이메일 주소</label></div>
+      <div class="fx__code"><b>:focus</b> → 라벨 translateY+scale(.72)</div></div>
+    <div class="info"><div class="info__hd"><h4>플로팅 라벨 입력창</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>포커스되면 플레이스홀더가 <b>위로 떠올라 라벨이 된다</b>. 자리 절약 + 맥락 유지. <code>:focus</code>와 ‘값 있음’ 상태 둘 다에 적용해야 한다.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“입력창 포커스하면 플레이스홀더가 위로 떠올라 작은 라벨이 되는 플로팅 라벨 만들어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">input:focus + label,
+input:not(:placeholder-shown) + label{
+  transform:translateY(-8px) scale(.72)}</div></div>
+  </section>
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">05</span><span class="fx__name">별점 채우기</span><span class="fx__eng">star rating</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><div class="stars" data-stars>
+      <svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.6 7.1.7-5.4 4.8 1.6 7-6.2-3.7-6.2 3.7 1.6-7L2 9.3l7.1-.7z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.6 7.1.7-5.4 4.8 1.6 7-6.2-3.7-6.2 3.7 1.6-7L2 9.3l7.1-.7z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.6 7.1.7-5.4 4.8 1.6 7-6.2-3.7-6.2 3.7 1.6-7L2 9.3l7.1-.7z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.6 7.1.7-5.4 4.8 1.6 7-6.2-3.7-6.2 3.7 1.6-7L2 9.3l7.1-.7z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.6 7.1.7-5.4 4.8 1.6 7-6.2-3.7-6.2 3.7 1.6-7L2 9.3l7.1-.7z"/></svg></div>
+      <div class="fx__code"><b>순차 채움</b> i×90ms + 스케일 팝</div></div>
+    <div class="info"><div class="info__hd"><h4>별점 순차 채우기</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>선택한 별까지 <b>왼쪽부터 시차를 두고</b> 노랗게 팝. 채워질 때 살짝 커졌다 돌아오면(스프링) 손맛이 산다.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“별점 클릭하면 그 별까지 순서대로 통통 튀며 노랗게 채워지게 해줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">stars.forEach((s,i)=>setTimeout(()=>
+  s.classList.toggle("on", i<=picked), i*90));</div></div>
+  </section>
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">06</span><span class="fx__name">체크 드로우</span><span class="fx__eng">checkbox draw</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><div class="chk" data-chk><svg viewBox="0 0 24 24"><polyline points="4.5,12.5 10,18 19.5,6.5"/></svg></div>
+      <div class="fx__code"><b>stroke-dashoffset</b> 26 → 0 (선 그리기)</div></div>
+    <div class="info"><div class="info__hd"><h4>체크박스 선 그리기</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>체크 표시가 <b>펜으로 긋듯</b> 그려진다. SVG 선 길이만큼 dasharray를 주고 offset을 0으로. 상자 팝(scale)과 함께.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“체크박스 선택하면 체크 표시가 손으로 긋는 것처럼 그려지게 해줘. stroke-dashoffset으로.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">polyline{stroke-dasharray:26;stroke-dashoffset:26}
+.on polyline{stroke-dashoffset:0;transition:.38s}</div></div>
+  </section>
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">07</span><span class="fx__name">스프링 스쿼시</span><span class="fx__eng">squash · stretch</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><button class="sq" data-sq>눌러 보세요</button>
+      <div class="fx__code"><b>scale(.9,.82)</b> → (1.06,1.1) → 1</div></div>
+    <div class="info"><div class="info__hd"><h4>스쿼시 &amp; 스트레치 버튼</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>디즈니 애니메이션 12원칙의 <b>squash &amp; stretch</b>. 눌리면 납작해졌다(가로↑세로↓) 튀어오르며 원상복귀. 가로세로를 <b>따로</b> 스케일하는 게 포인트.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“버튼 누르면 젤리처럼 납작해졌다가 튀어오르는 스쿼시 앤 스트레치 효과 넣어줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">@keyframes squish{35%{transform:scale(.9,.82)}
+  70%{transform:scale(1.06,1.1)}}</div></div>
+  </section>
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">08</span><span class="fx__name">알림 벨 + 배지</span><span class="fx__eng">bell ring · badge</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><div class="bell" data-bell>
+      <svg viewBox="0 0 24 24"><path d="M12 22a2.4 2.4 0 0 0 2.4-2.4H9.6A2.4 2.4 0 0 0 12 22zm7-6v-5.2c0-3.3-1.8-6-4.9-6.7V3.2a2.1 2.1 0 1 0-4.2 0v.9C6.8 4.8 5 7.5 5 10.8V16l-2 2v1h18v-1z"/></svg>
+      <b>3</b></div>
+      <div class="fx__code"><b>rotate 감쇠 진동</b> + 배지 스프링 팝</div></div>
+    <div class="info"><div class="info__hd"><h4>알림 벨 흔들림 + 배지 팝</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>벨이 <b>위쪽 고정점 기준</b>으로 점점 작아지는 진폭으로 흔들리고(감쇠 진동), 빨간 배지가 스프링으로 튀어나온다. transform-origin이 핵심.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“새 알림 오면 종이 딸랑딸랑 흔들리고 빨간 숫자 배지가 통 튀어나오게 해줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">svg{transform-origin:top center}
+@keyframes ring{15%{rotate:22deg}30%{rotate:-18deg}
+  45%{rotate:12deg}60%{rotate:-8deg}}</div></div>
+  </section>
+
+  <section class="fx">
+    <div class="fx__bar"><span class="fx__no">09</span><span class="fx__name">카피 피드백</span><span class="fx__eng">copy feedback</span><button class="fx__info">?</button></div>
+    <div class="fx__demo"><button class="cpy" data-cpy>
+      <span class="ic">
+        <svg class="c1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+        <svg class="c2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><polyline points="4,13 9.5,18.5 20,6.5"/></svg>
+      </span><span data-cpytxt>코드 복사</span></button>
+      <div class="fx__code"><b>아이콘 몰프</b> 복사 → ✓ 복사됨</div></div>
+    <div class="info"><div class="info__hd"><h4>카피 버튼 상태 피드백</h4><button class="info__x">✕</button></div>
+      <span class="lbl">필요한 것</span><p>누르면 <b>아이콘이 체크로 몰프</b>되고 문구가 ‘복사됨!’으로 2초간 바뀌었다 복귀. ‘동작이 성공했다’는 확신을 주는 최소 비용의 피드백.</p>
+      <span class="lbl">AI에게 이렇게</span><p class="ask">“복사 버튼 누르면 클립보드에 복사되고 아이콘이 체크로 바뀌며 ‘복사됨!’ 표시 후 원래대로 돌아오게 해줘.”</p>
+      <span class="lbl">핵심 코드</span><div class="cmd">await navigator.clipboard.writeText(code);
+btn.classList.add("on"); txt.textContent="복사됨!";
+setTimeout(()=>{ /* 복귀 */ }, 2000);</div></div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <p><span class="k">9가지 마이크로 인터랙션 —</span> 공통 재료는 셋: 오버슈트 스프링 <code>cubic-bezier(.34,1.56,.64,1)</code>, 상태 클래스 토글, 그리고 0.2~0.6초의 짧은 시간. 화면 전체가 아니라 <b>손끝이 닿은 곳</b>만 움직이는 게 원칙이다.</p>
+</footer>
+
+<script>
+"use strict";
+const REDUCE=matchMedia("(prefers-reduced-motion:reduce)").matches;
+document.querySelectorAll(".fx").forEach((p,i)=>{
+  if(!REDUCE)p.animate([{opacity:0,transform:"translateY(18px)"},{opacity:1,transform:"none"}],{duration:640,delay:i*60,easing:"cubic-bezier(.2,.7,.2,1)",fill:"backwards"});
+  const b=p.querySelector(".fx__info"),x=p.querySelector(".info__x");
+  if(b)b.addEventListener("click",()=>p.classList.toggle("open"));
+  if(x)x.addEventListener("click",()=>p.classList.remove("open"));
+});
+const AUTO=!REDUCE;
+
+/* 01 토글 */
+(function(){const t=document.querySelector("[data-tgl]");if(!t)return;
+  const flip=()=>t.classList.toggle("onn");
+  t.addEventListener("click",flip);if(AUTO)setInterval(flip,1600);})();
+
+/* 02 하트 버스트 */
+(function(){const h=document.querySelector("[data-heart]");if(!h)return;
+  const fire=()=>{h.classList.remove("onn");void h.offsetWidth;h.classList.add("onn");
+    setTimeout(()=>h.classList.remove("onn"),1100);};
+  h.addEventListener("click",fire);if(AUTO)setInterval(fire,2300);})();
+
+/* 03 리플 */
+(function(){const b=document.querySelector("[data-rip]");if(!b)return;
+  function ripple(x,y){const i=document.createElement("i");const d=Math.max(b.clientWidth,b.clientHeight)*2.2;
+    i.style.width=i.style.height=d+"px";i.style.left=x+"px";i.style.top=y+"px";i.className="go";
+    b.appendChild(i);setTimeout(()=>i.remove(),650);}
+  b.addEventListener("click",e=>ripple(e.offsetX,e.offsetY));
+  if(AUTO)setInterval(()=>ripple(b.clientWidth*(0.25+Math.random()*0.5),b.clientHeight*0.5),2100);})();
+
+/* 04 플로팅 라벨 (포커스 시뮬 + 타이핑) */
+(function(){const f=document.querySelector("[data-fld]");if(!f)return;const inp=f.querySelector("input");
+  const text="hello@cdsa.kr";let phase=0;
+  inp.addEventListener("focus",()=>f.classList.add("onn"));
+  if(AUTO)setInterval(()=>{phase=(phase+1)%4;
+    if(phase===1){f.classList.add("onn");}
+    else if(phase===2){let k=0;const iv=setInterval(()=>{inp.value=text.slice(0,++k);if(k>=text.length)clearInterval(iv);},55);}
+    else if(phase===0){inp.value="";f.classList.remove("onn");}},1300);})();
+
+/* 05 별점 */
+(function(){const w=document.querySelector("[data-stars]");if(!w)return;const st=[...w.querySelectorAll("svg")];
+  function pick(n){st.forEach((s,i)=>setTimeout(()=>s.classList.toggle("onn",i<n),i*90));}
+  st.forEach((s,i)=>s.addEventListener("click",()=>pick(i+1)));
+  let n=0;if(AUTO)setInterval(()=>{n=(n%5)+1;pick(n===5?0:n+0);},1500);})();
+
+/* 06 체크박스 */
+(function(){const c=document.querySelector("[data-chk]");if(!c)return;
+  const flip=()=>c.classList.toggle("onn");
+  c.addEventListener("click",flip);if(AUTO)setInterval(flip,1700);})();
+
+/* 07 스쿼시 */
+(function(){const b=document.querySelector("[data-sq]");if(!b)return;
+  const go=()=>{b.classList.remove("onn");void b.offsetWidth;b.classList.add("onn");};
+  b.addEventListener("click",go);if(AUTO)setInterval(go,1900);})();
+
+/* 08 벨 */
+(function(){const b=document.querySelector("[data-bell]");if(!b)return;const badge=b.querySelector("b");let n=3;
+  const go=()=>{b.classList.remove("onn");void b.offsetWidth;badge.textContent=n=n%9+1;b.classList.add("onn");};
+  b.addEventListener("click",go);if(AUTO)setInterval(go,2500);})();
+
+/* 09 카피 */
+(function(){const b=document.querySelector("[data-cpy]");if(!b)return;const t=b.querySelector("[data-cpytxt]");
+  const go=()=>{b.classList.add("onn");t.textContent="복사됨!";
+    setTimeout(()=>{b.classList.remove("onn");t.textContent="코드 복사";},1400);};
+  b.addEventListener("click",()=>{try{navigator.clipboard.writeText("웹 애니메이션 사전");}catch(e){}go();});
+  if(AUTO)setInterval(go,3000);})();
+</script>
+</body>
+</html>
